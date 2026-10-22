@@ -581,13 +581,16 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     const canvas = () => { const c = document.createElement('canvas'); c.width = c.height = SP; return c; };
     sprites = PAL.map(p => {
       const c = canvas(), g = c.getContext('2d');
-      let gr = g.createRadialGradient(C, C + R * 0.14, R * 0.8, C, C + R * 0.14, R * 1.12);
-      gr.addColorStop(0, 'rgba(0,12,24,.3)'); gr.addColorStop(1, 'rgba(0,12,24,0)');
-      g.fillStyle = gr; g.fillRect(0, 0, SP, SP);
-      gr = g.createRadialGradient(C - R * 0.25, C - R * 0.3, R * 0.1, C, C, R);
-      gr.addColorStop(0, p.light); gr.addColorStop(0.55, p.base); gr.addColorStop(1, p.dark);
+      // Translucent like a real bubble: see-through middle, color gathering toward the rim.
+      let gr = g.createRadialGradient(C - R * 0.2, C - R * 0.25, R * 0.05, C, C, R);
+      gr.addColorStop(0, rgba(p.light, 0.5)); gr.addColorStop(0.5, rgba(p.light, 0.42)); gr.addColorStop(0.8, rgba(p.base, 0.72)); gr.addColorStop(1, rgba(p.base, 0.95));
       g.fillStyle = gr;
       g.beginPath(); g.arc(C, C, R, 0, Math.PI * 2); g.fill();
+      g.lineWidth = R * 0.06; g.strokeStyle = rgba(p.light, 0.75);
+      g.beginPath(); g.arc(C, C, R * 0.95, 0, Math.PI * 2); g.stroke();
+      // a faint reflected glint on the lower edge
+      g.lineWidth = R * 0.07; g.lineCap = 'round'; g.strokeStyle = 'rgba(255,255,255,.3)';
+      g.beginPath(); g.arc(C, C, R * 0.78, Math.PI * 0.15, Math.PI * 0.45); g.stroke();
       g.drawImage(paintGloss(canvas(), C, R), 0, 0);
       return c;
     });
@@ -598,7 +601,7 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     g.save();
     g.translate(C - R * 0.32, C - R * 0.4); g.rotate(-0.55); g.scale(1, 0.6);
     const gr = g.createRadialGradient(0, 0, 0, 0, 0, R * 0.32);
-    gr.addColorStop(0, 'rgba(255,255,255,.5)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    gr.addColorStop(0, 'rgba(255,255,255,.6)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
     g.fillStyle = gr;
     g.beginPath(); g.arc(0, 0, R * 0.32, 0, Math.PI * 2); g.fill();
     g.restore();
@@ -612,8 +615,10 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     return g;
   }
   function drawRainbow(R) {
+    ctx.globalAlpha = 0.72;
     ctx.fillStyle = rainbowGradient(ctx, 0, 0, R, reduced ? 0 : now * 1.4);
     ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
     const gr = ctx.createRadialGradient(0, 0, 0, 0, 0, R * 0.55);
     gr.addColorStop(0, 'rgba(255,255,255,.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = gr;
