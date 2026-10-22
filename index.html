@@ -49,12 +49,12 @@ body{
 }
 .top{display:flex;align-items:center;justify-content:space-between;gap:12px}
 h1{
-  font-family:var(--display);font-weight:800;font-size:clamp(1.6rem,7vw,2.2rem);line-height:1;margin:0;letter-spacing:-.01em;
+  font-family:var(--display);font-weight:800;font-size:clamp(1.5rem,6.4vw,2.2rem);line-height:1;margin:0;letter-spacing:-.01em;
   background:linear-gradient(100deg,#eafbf6 0%,#9ff3ff 30%,#ffd166 55%,#ff9ec0 75%,#eafbf6 100%);
   background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
   animation:shimmer 9s linear infinite;
 }
-.stats{display:flex;gap:18px}
+.stats{display:flex;gap:14px}
 .stat{display:flex;flex-direction:column;align-items:flex-end}
 .label{font-size:.66rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--mist)}
 .num{font-family:var(--display);font-weight:800;font-size:1.4rem;line-height:1.1;font-variant-numeric:tabular-nums}
@@ -81,11 +81,19 @@ button:disabled{opacity:.38}
 button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
 .orb{width:22px;height:22px;border-radius:50%;background:var(--rainbow);box-shadow:inset -2px -3px 5px rgba(0,0,0,.2);animation:spin 5s linear infinite}
 #rbBtn{border-color:rgba(255,220,250,.35)}
+#bmBtn{border-color:rgba(255,170,110,.35)}
 #rbBtn:disabled .orb{filter:grayscale(1);animation:none}
-#rbBtn.armed{box-shadow:0 0 0 2px #fff,0 0 26px rgba(255,200,255,.75);animation:pulse 1s ease-in-out infinite}
+#bmBtn:disabled svg{filter:grayscale(1)}
+#rbBtn.armed,#bmBtn.armed{box-shadow:0 0 0 2px #fff,0 0 22px rgba(255,210,180,.6);animation:pulse 1s ease-in-out infinite}
+.bombicon .body{fill:#2e3247;stroke:#8a90a8;stroke-width:1.5}
+.bombicon .spark{stroke:#ffc23d}
+.right{display:flex;align-items:center;gap:12px}
+.iconbtn{padding:8px;border-radius:50%}
+.iconbtn svg{width:20px;height:20px}
 .badge{position:absolute;top:-7px;right:-3px;min-width:20px;height:20px;box-sizing:border-box;border-radius:10px;padding:0 6px;background:var(--sun);color:var(--abyss);font:800 .74rem/20px var(--body);font-variant-numeric:tabular-nums}
 .badge.bump{animation:bump .5s cubic-bezier(.2,1.8,.4,1)}
 .fly{position:fixed;left:0;top:0;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;background:var(--rainbow);box-shadow:0 0 30px rgba(255,255,255,.8);pointer-events:none;z-index:5;transition:transform .85s cubic-bezier(.45,-0.35,.35,1),opacity .85s ease-in}
+.fly.bomb{background:radial-gradient(circle at 35% 30%,#5d6480,#1a1c2a 75%);box-shadow:0 0 24px rgba(255,150,60,.8)}
 
 .overlay{
   position:fixed;inset:0;display:grid;place-items:center;z-index:4;
@@ -132,9 +140,12 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
 <div class="app">
   <header class="top">
     <h1>Bubble Lagoon</h1>
-    <div class="stats">
-      <div class="stat"><span class="label">Level</span><span class="num" id="lvl">1</span></div>
-      <div class="stat"><span class="label">Score</span><span class="num" id="score">0</span></div>
+    <div class="right">
+      <div class="stats">
+        <div class="stat"><span class="label">Level</span><span class="num" id="lvl">1</span></div>
+        <div class="stat"><span class="label">Score</span><span class="num" id="score">0</span></div>
+      </div>
+      <button id="soundBtn" class="iconbtn" type="button" aria-label="Sound on"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4z"/><g id="soundWaves"><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></g></svg></button>
     </div>
   </header>
   <div class="info">
@@ -146,8 +157,8 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     <button id="undoBtn" type="button"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>Undo</button>
     <button id="hintBtn" type="button"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>Hint</button>
     <button id="rbBtn" type="button" aria-label="Use a rainbow bubble"><span class="orb"></span>Rainbow<span class="badge" id="rbCount">0</span></button>
+    <button id="bmBtn" type="button" aria-label="Use a bomb bubble"><svg class="bombicon" viewBox="0 0 24 24"><circle class="body" cx="10" cy="14" r="7"/><path d="M14.5 8.5 17 6"/><path class="spark" d="M19.5 2v2M22 4.5h-2M21.3 2.7l-1.2 1.2"/></svg>Bomb<span class="badge" id="bmCount">0</span></button>
     <button id="restartBtn" type="button"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Restart</button>
-    <button id="soundBtn" type="button"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4z"/><g id="soundWaves"><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></g></svg><span id="soundLabel">Sound</span></button>
   </nav>
 </div>
 
@@ -158,6 +169,7 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     <div class="pearls" id="pearls"><span class="pearl"></span><span class="pearl"></span><span class="pearl"></span></div>
     <div class="pearl-note" id="pearlNote">Clear the board for all 3 pearls</div>
     <button id="ovRainbow" class="wide" type="button" hidden><span class="orb"></span><span id="ovRainbowLabel">Use a rainbow</span></button>
+    <button id="ovBomb" class="wide" type="button" hidden><svg class="bombicon" viewBox="0 0 24 24"><circle class="body" cx="10" cy="14" r="7"/><path d="M14.5 8.5 17 6"/><path class="spark" d="M19.5 2v2M22 4.5h-2M21.3 2.7l-1.2 1.2"/></svg><span id="ovBombLabel">Use a bomb</span></button>
     <div class="actions">
       <button id="againBtn" type="button">Play again</button>
       <button id="nextBtn" class="primary" type="button">Next level</button>
@@ -184,7 +196,10 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
   ];
   const RAINBOW_STOPS = ['#ff2e63', '#ffb300', '#14d36b', '#1e88ff', '#9a3dff', '#ff2e63'];
   const RB = 9;       // color code for a rainbow bubble: matches every color
+  const BOMB = 8;     // color code for a bomb bubble: tap to blast the 3×3 around it
+  const isSpecial = b => b.color === RB || b.color === BOMB;
   const TIDAL = 12;   // pop this many at once to earn a rainbow
+  const SPLASH = 8;   // pop this many at once to earn a bomb
   // Major pentatonic steps, so every pop chain sounds like a little tune.
   const SCALE = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26, 28, 31, 33, 36];
 
@@ -195,10 +210,12 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     if (s && typeof s.level === 'number') save = Object.assign(save, s);
   } catch (e) {}
   if (typeof save.rainbows !== 'number') { save.rainbows = 1; firstGift = true; }
+  if (typeof save.bombs !== 'number') { save.bombs = 1; firstGift = true; }
+  const stashKey = kind => kind === 'bomb' ? 'bombs' : 'rainbows';
   const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) {} };
 
   let level = 1, cols = 6, rows = 8, nColors = 3, grid = [], score = 0, undoStack = [];
-  let busy = false, ended = false, armed = false, chain = null, nextId = 1, shake = 0;
+  let busy = false, ended = false, armed = null, chain = null, nextId = 1, shake = 0;
   let parts = [], floats = [], now = 0, last = 0;
   let W = 0, H = 0, cell = 40, ox = 0, oy = 0, dpr = 1;
   let sprites = [], gloss = null, SP = 0;
@@ -211,9 +228,13 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
       return ((t ^ t >>> 14) >>> 0) / 4294967296;
     };
   }
+  // Difficulty ramps gently: a new color only arrives at levels 7 and 15, and boards start
+  // "clumpy" (bubbles often copy a neighbor's color) and get less clumpy level by level.
   function cfg(l) {
-    const c = l <= 3 ? 6 : l <= 8 ? 7 : 8;
-    return { nColors: l <= 2 ? 3 : l <= 5 ? 4 : 5, cols: c, rows: c + 2 };
+    const nColors = l <= 6 ? 3 : l <= 14 ? 4 : 5;
+    const firstOfTier = nColors === 3 ? 1 : nColors === 4 ? 7 : 15;
+    const c = l <= 4 ? 6 : l <= 10 ? 7 : 8;
+    return { nColors, cols: c, rows: c + 2, clump: Math.max(0.12, 0.5 - 0.06 * (l - firstOfTier)) };
   }
   function mk(color, c, r, fromTop) {
     return {
@@ -228,14 +249,21 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
 
   function startLevel(l) {
     level = l;
-    ({ nColors, cols, rows } = cfg(l));
+    const conf = cfg(l);
+    ({ nColors, cols, rows } = conf);
     const R = rng(l * 7919 + 13);
     grid = [];
     for (let c = 0; c < cols; c++) {
       grid[c] = [];
-      for (let r = 0; r < rows; r++) grid[c][r] = mk(Math.floor(R() * nColors), c, r, true);
+      for (let r = 0; r < rows; r++) {
+        const near = [];
+        if (r > 0) near.push(grid[c][r - 1].color);
+        if (c > 0) near.push(grid[c - 1][r].color);
+        const color = near.length && R() < conf.clump ? near[Math.floor(R() * near.length)] : Math.floor(R() * nColors);
+        grid[c][r] = mk(color, c, r, true);
+      }
     }
-    score = 0; undoStack = []; ended = false; busy = false; armed = false; chain = null; parts = []; floats = [];
+    score = 0; undoStack = []; ended = false; busy = false; armed = null; chain = null; parts = []; floats = [];
     save.level = l; persist();
     $('overlay').hidden = true;
     layout(); hud();
@@ -268,15 +296,30 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     seen.add(c * 100 + r); out.push([c, r]);
     for (const [dx, dy] of DIRS) {
       const nx = c + dx, ny = r + dy;
-      if (inside(nx, ny) && grid[nx][ny]) flood(nx, ny, grid[nx][ny].color, seen, out);
+      if (inside(nx, ny) && grid[nx][ny] && grid[nx][ny].color !== BOMB) flood(nx, ny, grid[nx][ny].color, seen, out);
     }
     return out;
+  }
+  // A bomb clears the 3×3 around it; other bombs caught in the blast go off too.
+  function blast(c, r) {
+    const seen = new Set([c * 100 + r]), out = [[c, r]];
+    for (let i = 0; i < out.length; i++) {
+      const [x, y] = out[i];
+      if (grid[x][y].color !== BOMB) continue;
+      for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+        const nx = x + dx, ny = y + dy;
+        if (!inside(nx, ny) || !grid[nx][ny] || seen.has(nx * 100 + ny)) continue;
+        seen.add(nx * 100 + ny); out.push([nx, ny]);
+      }
+    }
+    const d = ([x, y]) => (x - c) ** 2 + (y - r) ** 2;
+    return out.sort((a, b) => d(a) - d(b));
   }
   function hasMoves() {
     const match = (a, b) => b && (a.color === b.color || b.color === RB);
     for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) {
       const b = grid[c][r]; if (!b) continue;
-      if (b.color === RB) return true;
+      if (isSpecial(b)) return true;
       if (c + 1 < cols && match(b, grid[c + 1][r])) return true;
       if (r + 1 < rows && match(b, grid[c][r + 1])) return true;
     }
@@ -296,7 +339,7 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     grid = [...Array.from({ length: leftPad }, blank), ...filled, ...Array.from({ length: empty - leftPad }, blank)];
   }
   const pushUndo = () => {
-    undoStack.push({ g: colorsOf(), score, rainbows: save.rainbows });
+    undoStack.push({ g: colorsOf(), score, rainbows: save.rainbows, bombs: save.bombs });
     if (undoStack.length > 80) undoStack.shift();
   };
 
@@ -304,47 +347,64 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     if (busy || ended) return;
     const b = grid[c] && grid[c][r];
     if (!b) return;
-    if (armed) { placeRainbow(b); return; }
-    const g = findGroup(c, r);
-    if (g.length < 2 && b.color !== RB) { b.wob = 1; boop(); return; }
+    if (armed) { placeSpecial(b); return; }
+    const isBomb = b.color === BOMB;
+    const g = isBomb ? blast(c, r) : findGroup(c, r);
+    if (g.length < 2 && !isSpecial(b)) { b.wob = 1; boop(); return; }
     pushUndo();
     busy = true;
-    const step = Math.min(0.05, 0.7 / g.length);
+    const step = isBomb ? Math.min(0.03, 0.4 / g.length) : Math.min(0.05, 0.7 / g.length);
     g.forEach(([x, y], i) => { const t = grid[x][y]; t.popAt = now + i * step; t.popIdx = i; });
-    const gain = g.length * (g.length - 1) * 5 + (b.color === RB ? 50 : 0);
+    const gain = isBomb ? g.length * 20 : g.length * (g.length - 1) * 5 + (b.color === RB ? 50 : 0);
     score += gain;
     const fx = px(b.x), fy = py(b.y);
     floats.push({ x: fx, y: fy, text: '+' + gain, life: 1, size: 1 });
-    if (g.length >= TIDAL) {
+    if (isBomb) {
+      floats.push({ x: fx, y: fy - cell, text: 'Boom!', life: 1.2, size: 1.4 });
+      parts.push({ kind: 'flash', x: fx, y: fy, r: cell * 2.2, life: 1, col: '#ffa04a' });
+      parts.push({ kind: 'ring', x: fx, y: fy, r: cell * 0.6, life: 1, col: '#ffc23d' });
+      if (!reduced) shake = cell * 0.25;
+      boom();
+    } else if (g.length >= TIDAL) {
       floats.push({ x: fx, y: fy - cell, text: 'Tidal wave!', life: 1.4, size: 1.5, rainbow: true });
       save.rainbows++; persist();
-      setTimeout(() => flyToStash(fx, fy), 350);
+      setTimeout(() => flyToStash(fx, fy, 'rainbow'), 350);
       tip('Tidal wave! You earned a rainbow bubble.');
-    } else if (g.length >= 8) {
+    } else if (g.length >= SPLASH) {
       floats.push({ x: fx, y: fy - cell, text: 'Splash!', life: 1.2, size: 1.3 });
+      save.bombs++; persist();
+      setTimeout(() => flyToStash(fx, fy, 'bomb'), 350);
+      tip('Splash! You earned a bomb bubble.');
     }
-    if (g.length >= 8 && !reduced) shake = Math.min(cell * 0.2, (g.length - 6) * 1.1);
+    if (!isBomb && g.length >= 8 && !reduced) shake = Math.min(cell * 0.2, (g.length - 6) * 1.1);
     chain = { cells: g, end: now + g.length * step + 0.08 };
     buzz(g.length >= 8 ? 20 : 8); hud();
   }
 
-  function placeRainbow(b) {
-    if (b.color === RB) return;
+  function placeSpecial(b) {
+    if (isSpecial(b)) return;
+    const kind = armed;
     pushUndo();
-    b.color = RB; b.wob = 1; b.scale = 0.4;
-    armed = false;
-    save.rainbows--; persist();
-    sparkleBurst(px(b.x), py(b.y), 14);
-    shimmer(); buzz(15);
-    tip('Rainbow placed! It matches every color. Tap it to pop it with all its neighbors.');
+    b.color = kind === 'bomb' ? BOMB : RB; b.wob = 1; b.scale = 0.4;
+    armed = null;
+    save[stashKey(kind)]--; persist();
+    sparkleBurst(px(b.x), py(b.y), kind === 'bomb' ? 6 : 14);
+    buzz(15);
+    if (kind === 'bomb') {
+      note(-7, 0, 0.18, 'triangle', 0.1, 0.7);
+      tip('Bomb placed! Tap it to blast every bubble around it.');
+    } else {
+      shimmer();
+      tip('Rainbow placed! It matches every color. Tap it to pop it with all its neighbors.');
+    }
     hud();
   }
 
-  function setArmed(on) {
-    if (on && (save.rainbows < 1 || busy || ended)) return;
-    armed = on;
-    tip(on ? 'Tap any bubble to turn it into a rainbow.' : null);
-    if (on) note(12, 0, 0.2, 'triangle', 0.07, 1);
+  function setArmed(kind) {
+    if (kind && (save[stashKey(kind)] < 1 || busy || ended)) return;
+    armed = kind;
+    tip(kind ? `Tap any bubble to turn it into a ${kind}.` : null);
+    if (kind) note(12, 0, 0.2, 'triangle', 0.07, 1);
     hud();
   }
 
@@ -376,8 +436,10 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
   function undo() {
     if (busy || !undoStack.length) return;
     const s = undoStack.pop();
-    grid = fromColors(s.g); score = s.score; ended = false; armed = false;
-    if (typeof s.rainbows === 'number') { save.rainbows = s.rainbows; persist(); }
+    grid = fromColors(s.g); score = s.score; ended = false; armed = null;
+    if (typeof s.rainbows === 'number') save.rainbows = s.rainbows;
+    if (typeof s.bombs === 'number') save.bombs = s.bombs;
+    persist();
     $('overlay').hidden = true;
     swish(); tip(null); hud();
   }
@@ -385,7 +447,7 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     if (busy || ended) return;
     let best = null;
     for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) {
-      if (!grid[c][r] || grid[c][r].color === RB) continue;
+      if (!grid[c][r] || isSpecial(grid[c][r])) continue;
       const g = findGroup(c, r);
       if (g.length > 1 && (!best || g.length > best.length)) best = g;
     }
@@ -403,11 +465,13 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
       : `${left} bubble${left === 1 ? '' : 's'} left drifting. Score ${score.toLocaleString()}.`;
     [...$('pearls').children].forEach((p, i) => p.classList.toggle('on', i < pearls));
     $('pearlNote').textContent = pearls === 3 ? 'All 3 pearls' : left <= 3 ? 'Clear every bubble for 3 pearls' : 'Leave 3 or fewer for 2 pearls · clear all for 3';
-    const canRainbow = left > 0 && save.rainbows > 0;
+    const canRainbow = left > 0 && save.rainbows > 0, canBomb = left > 0 && save.bombs > 0;
     $('ovRainbow').hidden = !canRainbow;
     $('ovRainbowLabel').textContent = `Keep going with a rainbow (${save.rainbows})`;
+    $('ovBomb').hidden = !canBomb;
+    $('ovBombLabel').textContent = `Keep going with a bomb (${save.bombs})`;
     $('overlay').hidden = false;
-    (canRainbow ? $('ovRainbow') : $('nextBtn')).focus({ preventScroll: true });
+    (canRainbow ? $('ovRainbow') : canBomb ? $('ovBomb') : $('nextBtn')).focus({ preventScroll: true });
   }
 
   let tipTimer = 0;
@@ -427,19 +491,23 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     $('best').textContent = b ? b.score.toLocaleString() : '–';
     $('undoBtn').disabled = !undoStack.length;
     $('rbCount').textContent = save.rainbows;
-    $('rbBtn').disabled = save.rainbows < 1 && !armed;
-    $('rbBtn').classList.toggle('armed', armed);
+    $('rbBtn').disabled = save.rainbows < 1 && armed !== 'rainbow';
+    $('rbBtn').classList.toggle('armed', armed === 'rainbow');
+    $('bmCount').textContent = save.bombs;
+    $('bmBtn').disabled = save.bombs < 1 && armed !== 'bomb';
+    $('bmBtn').classList.toggle('armed', armed === 'bomb');
     $('soundWaves').innerHTML = save.sound
       ? '<path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>'
       : '<path d="m22 9-6 6M16 9l6 6"/>';
-    $('soundLabel').textContent = save.sound ? 'Sound' : 'Muted';
+    $('soundBtn').setAttribute('aria-label', save.sound ? 'Sound on' : 'Sound off');
   }
 
-  function flyToStash(x, y) {
-    const r = cv.getBoundingClientRect(), t = $('rbBtn').getBoundingClientRect();
+  function flyToStash(x, y, kind) {
+    const btn = kind === 'bomb' ? 'bmBtn' : 'rbBtn';
+    const r = cv.getBoundingClientRect(), t = $(btn).getBoundingClientRect();
     const sx = r.left + x, sy = r.top + y;
     const el = document.createElement('div');
-    el.className = 'fly';
+    el.className = kind === 'bomb' ? 'fly bomb' : 'fly';
     el.style.transform = `translate(${sx}px,${sy}px) scale(.3)`;
     document.body.appendChild(el);
     shimmer();
@@ -449,7 +517,7 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     }));
     setTimeout(() => {
       el.remove();
-      const badge = $('rbCount');
+      const badge = $(kind === 'bomb' ? 'bmCount' : 'rbCount');
       badge.classList.remove('bump'); void badge.offsetWidth; badge.classList.add('bump');
       note(19, 0, 0.3, 'triangle', 0.08, 1);
     }, 880);
@@ -480,6 +548,21 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
   const boop = () => note(-5, 0, 0.16, 'triangle', 0.07, 0.8);
   const swish = () => { note(7, 0, 0.12, 'sine', 0.06, 0.7); note(0, 0.06, 0.14, 'sine', 0.06, 0.7); };
   const shimmer = () => [12, 16, 19, 24, 28, 31].forEach((s, i) => note(s, i * 0.04, 0.35, 'triangle', 0.05, 1));
+  function boom() {
+    if (!save.sound) return;
+    const a = ac(); if (!a) return;
+    const t = a.currentTime, len = Math.floor(a.sampleRate * 0.5);
+    const buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+    src.buffer = buf;
+    f.type = 'lowpass';
+    f.frequency.setValueAtTime(1400, t); f.frequency.exponentialRampToValueAtTime(110, t + 0.45);
+    g.gain.value = 0.3;
+    src.connect(f).connect(g).connect(a.destination);
+    src.start(t);
+    note(-19, 0, 0.45, 'sine', 0.25, 2.4);
+  }
   const chime = () => [0, 4, 7, 12, 16, 19, 24].forEach((s, i) => note(s + 5, i * 0.08, 0.5, 'sine', 0.09, 1));
   const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
 
@@ -555,6 +638,22 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
       star(Math.cos(a) * R * 1.12, Math.sin(a) * R * 1.12, R * 0.18, a, 'rgba(255,255,255,.75)');
     }
   }
+  function drawBomb(R) {
+    const gr = ctx.createRadialGradient(-R * 0.3, -R * 0.3, R * 0.1, 0, R * 0.05, R * 0.9);
+    gr.addColorStop(0, '#666d8c'); gr.addColorStop(0.6, '#2e3247'); gr.addColorStop(1, '#181a27');
+    ctx.fillStyle = gr;
+    ctx.beginPath(); ctx.arc(0, R * 0.06, R * 0.88, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = R * 0.08; ctx.strokeStyle = `rgba(255,130,60,${0.45 + 0.3 * Math.sin(now * 5)})`;
+    ctx.stroke();
+    ctx.fillStyle = '#8a90a8';
+    roundRect(ctx, -R * 0.22, -R * 0.98, R * 0.44, R * 0.22, R * 0.06); ctx.fill();
+    ctx.lineWidth = R * 0.09; ctx.lineCap = 'round'; ctx.strokeStyle = '#d9c7a3';
+    ctx.beginPath(); ctx.moveTo(0, -R * 0.92); ctx.quadraticCurveTo(R * 0.15, -R * 1.25, R * 0.45, -R * 1.15); ctx.stroke();
+    const flick = reduced ? 1 : 0.75 + Math.random() * 0.5;
+    star(R * 0.45, -R * 1.15, R * 0.3 * flick, now * 6, '#ffc23d');
+    star(R * 0.45, -R * 1.15, R * 0.15 * flick, -now * 4, '#ff6a00');
+    ctx.drawImage(gloss, -SP / 2 / dpr, -SP / 2 / dpr, SP / dpr, SP / dpr);
+  }
   function star(x, y, s, rot, fill) {
     ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
     ctx.fillStyle = fill;
@@ -568,7 +667,7 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
 
   function burst(b) {
     const x = px(b.x), y = py(b.y);
-    const col = b.color === RB ? '#ffffff' : PAL[b.color].light;
+    const col = b.color === RB ? '#ffffff' : b.color === BOMB ? '#ffa04a' : PAL[b.color].light;
     parts.push({ kind: 'flash', x, y, r: cell * 0.6, life: 1, col });
     parts.push({ kind: 'ring', x, y, r: cell * 0.4, life: 1, col });
     const n = reduced ? 4 : 10;
@@ -608,6 +707,7 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
       ctx.beginPath(); ctx.arc(0, 0, R * 1.18, 0, Math.PI * 2); ctx.fill();
     }
     if (b.color === RB) drawRainbow(R);
+    else if (b.color === BOMB) drawBomb(R);
     else ctx.drawImage(sprites[b.color], -SP / 2 / dpr, -SP / 2 / dpr, SP / dpr, SP / dpr);
     ctx.restore();
   }
@@ -760,8 +860,10 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
   $('undoBtn').onclick = undo;
   $('ovUndo').onclick = undo;
   $('hintBtn').onclick = hint;
-  $('rbBtn').onclick = () => setArmed(!armed);
-  $('ovRainbow').onclick = () => { $('overlay').hidden = true; ended = false; setArmed(true); };
+  $('rbBtn').onclick = () => setArmed(armed === 'rainbow' ? null : 'rainbow');
+  $('bmBtn').onclick = () => setArmed(armed === 'bomb' ? null : 'bomb');
+  $('ovRainbow').onclick = () => { $('overlay').hidden = true; ended = false; setArmed('rainbow'); };
+  $('ovBomb').onclick = () => { $('overlay').hidden = true; ended = false; setArmed('bomb'); };
   $('restartBtn').onclick = () => { if (!busy) startLevel(level); };
   $('againBtn').onclick = () => startLevel(level);
   $('nextBtn').onclick = () => startLevel(level + 1);
@@ -779,7 +881,7 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
       layout(); hud();
     } else startLevel(save.level || 1);
     persist();
-    if (firstGift) tip('A gift: one rainbow bubble. Pop 12+ at once (a Tidal wave) to earn more.');
+    if (firstGift) tip('A gift for your stash! Pop 8+ at once to earn bombs, 12+ to earn rainbows.');
     requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
   };
   window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? {});
