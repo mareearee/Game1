@@ -25,7 +25,7 @@
   --sun:#ffd166;
   --glass:rgba(255,255,255,.06);
   --line:rgba(255,255,255,.13);
-  --rainbow:conic-gradient(from 0deg,#ff5e8a,#ffc94a,#3ff0b4,#48b8ff,#b47cff,#ff5e8a);
+  --rainbow:conic-gradient(from 0deg,#ff2e63,#ffb300,#14d36b,#1e88ff,#9a3dff,#ff2e63);
   --display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
   --body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
   color-scheme:dark;
@@ -52,7 +52,6 @@ h1{
   font-family:var(--display);font-weight:800;font-size:clamp(1.6rem,7vw,2.2rem);line-height:1;margin:0;letter-spacing:-.01em;
   background:linear-gradient(100deg,#eafbf6 0%,#9ff3ff 30%,#ffd166 55%,#ff9ec0 75%,#eafbf6 100%);
   background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 2px 10px rgba(120,240,255,.25));
   animation:shimmer 9s linear infinite;
 }
 .stats{display:flex;gap:18px}
@@ -80,7 +79,7 @@ button svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;s
 button:active{transform:scale(.94)}
 button:disabled{opacity:.38}
 button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
-.orb{width:22px;height:22px;border-radius:50%;background:var(--rainbow);box-shadow:0 0 12px rgba(255,255,255,.45),inset -3px -4px 6px rgba(0,0,0,.25),inset 3px 3px 5px rgba(255,255,255,.6);animation:spin 5s linear infinite}
+.orb{width:22px;height:22px;border-radius:50%;background:var(--rainbow);box-shadow:inset -2px -3px 5px rgba(0,0,0,.2);animation:spin 5s linear infinite}
 #rbBtn{border-color:rgba(255,220,250,.35)}
 #rbBtn:disabled .orb{filter:grayscale(1);animation:none}
 #rbBtn.armed{box-shadow:0 0 0 2px #fff,0 0 26px rgba(255,200,255,.75);animation:pulse 1s ease-in-out infinite}
@@ -177,13 +176,13 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
   const DISPLAY = '"Baloo 2","Trebuchet MS",sans-serif';
 
   const PAL = [
-    { base: '#ff5e8a', light: '#ffd3e0', dark: '#b8204e' }, // coral
-    { base: '#ffc94a', light: '#fff4c4', dark: '#c98a0c' }, // sunfish
-    { base: '#3ff0b4', light: '#d0fff0', dark: '#0f9c74' }, // sea glass
-    { base: '#48b8ff', light: '#d4edff', dark: '#1767bd' }, // shallows
-    { base: '#b47cff', light: '#ecdcff', dark: '#6e36c4' }, // anemone
+    { base: '#ff2e63', light: '#ff7096', dark: '#c4104a' }, // coral
+    { base: '#ffb300', light: '#ffd04d', dark: '#e07b00' }, // sunfish
+    { base: '#14d36b', light: '#5ff09b', dark: '#079a4c' }, // sea glass
+    { base: '#1e88ff', light: '#5fadff', dark: '#0b5bd1' }, // shallows
+    { base: '#9a3dff', light: '#bd7dff', dark: '#6a17d6' }, // anemone
   ];
-  const RAINBOW_STOPS = ['#ff5e8a', '#ffc94a', '#3ff0b4', '#48b8ff', '#b47cff', '#ff5e8a'];
+  const RAINBOW_STOPS = ['#ff2e63', '#ffb300', '#14d36b', '#1e88ff', '#9a3dff', '#ff2e63'];
   const RB = 9;       // color code for a rainbow bubble: matches every color
   const TIDAL = 12;   // pop this many at once to earn a rainbow
   // Major pentatonic steps, so every pop chain sounds like a little tune.
@@ -503,19 +502,19 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     buildSprites();
   }
 
-  // Bubbles are painted once per size into sprites (glow, glassy body, highlights), then stamped each frame.
+  // Bubbles are painted once per size into sprites (soft shadow, bold candy body, one gentle highlight), then stamped each frame.
   function buildSprites() {
     const R = cell * 0.46 * dpr;
-    SP = Math.max(4, Math.ceil(R * 2 * 1.5));
+    SP = Math.max(4, Math.ceil(R * 2 * 1.3));
     const C = SP / 2;
     const canvas = () => { const c = document.createElement('canvas'); c.width = c.height = SP; return c; };
     sprites = PAL.map(p => {
       const c = canvas(), g = c.getContext('2d');
-      let gr = g.createRadialGradient(C, C, R * 0.75, C, C, R * 1.45);
-      gr.addColorStop(0, rgba(p.base, 0.42)); gr.addColorStop(1, rgba(p.base, 0));
+      let gr = g.createRadialGradient(C, C + R * 0.14, R * 0.8, C, C + R * 0.14, R * 1.12);
+      gr.addColorStop(0, 'rgba(0,12,24,.3)'); gr.addColorStop(1, 'rgba(0,12,24,0)');
       g.fillStyle = gr; g.fillRect(0, 0, SP, SP);
-      gr = g.createRadialGradient(C - R * 0.3, C - R * 0.38, R * 0.05, C, C, R);
-      gr.addColorStop(0, p.light); gr.addColorStop(0.5, p.base); gr.addColorStop(1, p.dark);
+      gr = g.createRadialGradient(C - R * 0.25, C - R * 0.3, R * 0.1, C, C, R);
+      gr.addColorStop(0, p.light); gr.addColorStop(0.55, p.base); gr.addColorStop(1, p.dark);
       g.fillStyle = gr;
       g.beginPath(); g.arc(C, C, R, 0, Math.PI * 2); g.fill();
       g.drawImage(paintGloss(canvas(), C, R), 0, 0);
@@ -526,26 +525,12 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
   function paintGloss(c, C, R) {
     const g = c.getContext('2d');
     g.save();
-    g.beginPath(); g.arc(C, C, R, 0, Math.PI * 2); g.clip();
-    let gr = g.createRadialGradient(C, C, R * 0.6, C, C, R);
-    gr.addColorStop(0, 'rgba(0,10,30,0)'); gr.addColorStop(1, 'rgba(0,10,30,.32)');
-    g.fillStyle = gr; g.fillRect(0, 0, SP, SP);
-    // light bending through the bottom of the bubble
-    gr = g.createRadialGradient(C + R * 0.1, C + R * 0.75, 0, C + R * 0.1, C + R * 0.75, R * 0.65);
-    gr.addColorStop(0, 'rgba(255,255,255,.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-    g.fillStyle = gr; g.fillRect(0, 0, SP, SP);
-    g.restore();
-    g.save();
-    g.translate(C - R * 0.3, C - R * 0.42); g.rotate(-0.55); g.scale(1, 0.58);
-    gr = g.createRadialGradient(0, 0, 0, 0, 0, R * 0.46);
-    gr.addColorStop(0, 'rgba(255,255,255,.95)'); gr.addColorStop(0.55, 'rgba(255,255,255,.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.translate(C - R * 0.32, C - R * 0.4); g.rotate(-0.55); g.scale(1, 0.6);
+    const gr = g.createRadialGradient(0, 0, 0, 0, 0, R * 0.32);
+    gr.addColorStop(0, 'rgba(255,255,255,.5)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
     g.fillStyle = gr;
-    g.beginPath(); g.arc(0, 0, R * 0.46, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.arc(0, 0, R * 0.32, 0, Math.PI * 2); g.fill();
     g.restore();
-    g.fillStyle = 'rgba(255,255,255,.9)';
-    g.beginPath(); g.arc(C + R * 0.42, C - R * 0.5, R * 0.07, 0, Math.PI * 2); g.fill();
-    g.lineWidth = R * 0.05; g.strokeStyle = 'rgba(255,255,255,.3)';
-    g.beginPath(); g.arc(C, C, R * 0.97, 0, Math.PI * 2); g.stroke();
     return c;
   }
   function rainbowGradient(c, x, y, R, spin) {
@@ -556,21 +541,18 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     return g;
   }
   function drawRainbow(R) {
-    const pulse = 0.5 + 0.5 * Math.sin(now * 3);
-    let gr = ctx.createRadialGradient(0, 0, R * 0.7, 0, 0, R * (1.5 + pulse * 0.2));
-    gr.addColorStop(0, `rgba(255,240,255,${0.45 + pulse * 0.2})`); gr.addColorStop(1, 'rgba(255,240,255,0)');
-    ctx.fillStyle = gr;
-    ctx.beginPath(); ctx.arc(0, 0, R * 1.7, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = rainbowGradient(ctx, 0, 0, R, reduced ? 0 : now * 1.4);
     ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
-    gr = ctx.createRadialGradient(0, 0, 0, 0, 0, R);
-    gr.addColorStop(0, 'rgba(255,255,255,.55)'); gr.addColorStop(0.6, 'rgba(255,255,255,.1)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    const gr = ctx.createRadialGradient(0, 0, 0, 0, 0, R * 0.55);
+    gr.addColorStop(0, 'rgba(255,255,255,.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = gr;
-    ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, R * 0.55, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = R * 0.08; ctx.strokeStyle = 'rgba(255,255,255,.7)';
+    ctx.beginPath(); ctx.arc(0, 0, R * 0.96, 0, Math.PI * 2); ctx.stroke();
     ctx.drawImage(gloss, -SP / 2 / dpr, -SP / 2 / dpr, SP / dpr, SP / dpr);
     if (!reduced) {
       const a = now * 2.2;
-      star(Math.cos(a) * R * 1.15, Math.sin(a) * R * 1.15, R * 0.22, a, 'rgba(255,255,255,.9)');
+      star(Math.cos(a) * R * 1.12, Math.sin(a) * R * 1.12, R * 0.18, a, 'rgba(255,255,255,.75)');
     }
   }
   function star(x, y, s, rot, fill) {
@@ -641,27 +623,37 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     b.scale += (1 - b.scale) * Math.min(1, dt * 10);
   }
 
-  // Underwater backdrop: swaying light shafts, drifting specks, rising bubbles.
-  const rays = Array.from({ length: 6 }, (_, i) => ({ x: (i + 0.5) / 6 + (Math.random() - 0.5) * 0.1, w: 0.05 + Math.random() * 0.09, ph: Math.random() * 6, sp: 0.15 + Math.random() * 0.2 }));
+  // Underwater backdrop: sparkles twinkling in the water, drifting specks, rising bubbles.
+  const newSparkle = s => Object.assign(s, { x: Math.random(), y: Math.random(), size: 2.5 + Math.random() * 4.5, ph: Math.random() * 6.28, sp: 0.6 + Math.random() * 1.1, rot: Math.random() * 6 });
+  const sparkles = Array.from({ length: 38 }, () => newSparkle({}));
   const specks = Array.from({ length: 34 }, () => ({ x: Math.random(), y: Math.random(), r: 0.6 + Math.random() * 1.4, sp: 0.004 + Math.random() * 0.01, ph: Math.random() * 6 }));
   const amb = Array.from({ length: 20 }, () => ({ x: Math.random(), y: Math.random(), r: 2 + Math.random() * 7, sp: 0.012 + Math.random() * 0.03, ph: Math.random() * 6 }));
+  function bgStar(x, y, s, rot, alpha) {
+    bctx.save(); bctx.translate(x, y); bctx.rotate(rot);
+    bctx.fillStyle = `rgba(225,255,250,${alpha})`;
+    bctx.beginPath();
+    for (let i = 0; i < 8; i++) {
+      const rr = i % 2 ? s * 0.22 : s, a = i * Math.PI / 4;
+      bctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+    }
+    bctx.closePath(); bctx.fill(); bctx.restore();
+  }
   function drawBg(dt) {
     const w = bg.width, h = bg.height;
     bctx.clearRect(0, 0, w, h);
-    bctx.globalCompositeOperation = 'lighter';
-    for (const ray of rays) {
-      const sway = reduced ? 0 : Math.sin(now * ray.sp + ray.ph);
-      const x = (ray.x + sway * 0.03) * w, top = ray.w * w * 0.5, bot = ray.w * w * 2.4, drift = sway * w * 0.07;
-      const a = 0.055 + (reduced ? 0 : 0.035 * Math.sin(now * ray.sp * 1.7 + ray.ph));
-      const g = bctx.createLinearGradient(0, 0, 0, h * 0.8);
-      g.addColorStop(0, `rgba(160,255,240,${a})`); g.addColorStop(1, 'rgba(160,255,240,0)');
-      bctx.fillStyle = g;
-      bctx.beginPath();
-      bctx.moveTo(x - top / 2, 0); bctx.lineTo(x + top / 2, 0);
-      bctx.lineTo(x + bot / 2 + drift, h * 0.8); bctx.lineTo(x - bot / 2 + drift, h * 0.8);
-      bctx.closePath(); bctx.fill();
+    for (const s of sparkles) {
+      let a = 0.35;
+      if (!reduced) {
+        const prev = Math.sin(s.ph);
+        s.ph += s.sp * dt;
+        const v = Math.sin(s.ph);
+        if (prev < 0 && v >= 0) { newSparkle(s); s.ph = 0; } // twinkled out: fade in somewhere else
+        a = Math.pow(Math.max(0, v), 3) * 0.75;
+        s.y -= 0.003 * dt;
+      }
+      if (a < 0.02) continue;
+      bgStar(s.x * w, s.y * h, s.size * dpr * (0.6 + a * 0.5), s.rot, a);
     }
-    bctx.globalCompositeOperation = 'source-over';
     for (const s of specks) {
       if (!reduced) { s.y -= s.sp * dt; if (s.y < -0.02) { s.y = 1.02; s.x = Math.random(); } }
       bctx.fillStyle = `rgba(200,255,245,${0.18 + 0.12 * Math.sin(now * 2 + s.ph)})`;
@@ -703,16 +695,17 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
       drawBubble(b, dt);
     }
 
-    ctx.globalCompositeOperation = 'lighter';
     for (let i = parts.length - 1; i >= 0; i--) {
       const p = parts[i];
       if (p.kind === 'flash') {
+        ctx.globalCompositeOperation = 'lighter';
         p.life -= dt * 5;
         const a = Math.max(0, p.life);
         const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
-        g.addColorStop(0, rgba(p.col, 0.8 * a)); g.addColorStop(1, rgba(p.col, 0));
+        g.addColorStop(0, rgba(p.col, 0.35 * a)); g.addColorStop(1, rgba(p.col, 0));
         ctx.fillStyle = g;
         ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
       } else if (p.kind === 'ring') {
         p.life -= dt * 2.8; p.r += cell * 1.8 * dt;
         ctx.globalAlpha = Math.max(0, p.life) * 0.9;
