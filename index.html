@@ -41,10 +41,10 @@ body{
 #bg{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
 /* World backdrops: two layers crossfade; a tint keeps bubbles and header text readable. */
 .scene{position:fixed;inset:0;pointer-events:none;--tint:.3}
-.scene div{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.4s ease}
-.scene div.on{opacity:1}
+.scene canvas{position:absolute;inset:0;width:100%;height:100%;opacity:0;transition:opacity 1.4s ease}
+.scene canvas.on{opacity:1}
 .scene::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,16,26,calc(var(--tint) + .3)) 0%,rgba(4,16,26,var(--tint)) 20%,rgba(4,16,26,var(--tint)) 80%,rgba(4,16,26,calc(var(--tint) + .25)) 100%)}
-@media (prefers-reduced-motion:reduce){.scene div{transition:none}}
+@media (prefers-reduced-motion:reduce){.scene canvas{transition:none}}
 .app{
   position:relative;height:100%;box-sizing:border-box;
   display:flex;flex-direction:column;gap:10px;
@@ -142,7 +142,7 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
 </head>
 <body>
 
-<div class="scene" id="scene" aria-hidden="true"><div></div><div></div></div>
+<div class="scene" id="scene" aria-hidden="true"><canvas></canvas><canvas></canvas></div>
 <canvas id="bg" aria-hidden="true"></canvas>
 <div class="app">
   <header class="top">
@@ -595,29 +595,42 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     if ((l - 1) % 10 === 0) tip(`Welcome to world ${w + 1}: ${WORLDS[w].name}!`);
     if (w === worldShown) return;
     worldShown = w;
-    worldImage(w).then(src => {
+    worldImage(w).then(img => {
       if (worldShown !== w) return;
       const layers = $('scene').children, next = layers[sceneLayer ^ 1];
-      next.style.backgroundImage = `url("${src}")`;
+      paintScene(next, img);
       $('scene').style.setProperty('--tint', WORLDS[w].tint);
       next.classList.add('on'); layers[sceneLayer].classList.remove('on');
       sceneLayer ^= 1;
       worldImage((w + 1) % WORLDS.length); // warm up the next world
     }, () => {});
   }
-  // Some hosts (like the artifact viewer) only serve the page's own files to fetch(), so load the
-  // image that way and hand CSS a blob URL; fall back to the plain path where fetch can't reach it.
-  // The artifact build (tools/build.js) inlines every image as a data URI in window.WORLD_IMAGES.
+  // Backdrops are painted onto canvases, cover-fit to the screen.
+  function paintScene(c, img) {
+    const d = Math.min(2, window.devicePixelRatio || 1);
+    c.width = Math.round(innerWidth * d); c.height = Math.round(innerHeight * d);
+    const s = Math.max(c.width / img.width, c.height / img.height), w = img.width * s, h = img.height * s;
+    c.getContext('2d').drawImage(img, (c.width - w) / 2, (c.height - h) / 2, w, h);
+    c.sceneImg = img;
+  }
+  // The artifact viewer can refuse to load images of any kind, so the artifact build
+  // (tools/build.js) inlines each backdrop's bytes in window.WORLD_IMAGES and they're decoded with
+  // createImageBitmap, which loads nothing. Elsewhere the image file is fetched and decoded the
+  // same way, with a plain <img> load as the last resort (e.g. when opened from disk).
   const worldSrc = {};
   function worldImage(w) {
     const file = WORLDS[w].file, inlined = window.WORLD_IMAGES && window.WORLD_IMAGES[w];
-    const decoded = src => new Promise((ok, fail) => { const i = new Image(); i.onload = () => ok(src); i.onerror = fail; i.src = src; });
-    if (inlined) return worldSrc[w] = worldSrc[w] || decoded(inlined);
-    return worldSrc[w] = worldSrc[w] || fetch(file)
-      .then(r => r.ok ? r.blob() : Promise.reject(new Error(r.status)))
-      .then(b => decoded(URL.createObjectURL(b)))
-      .catch(() => decoded(file))
-      .catch(err => { delete worldSrc[w]; throw err; });
+    const viaImg = src => new Promise((ok, fail) => { const i = new Image(); i.onload = () => ok(i); i.onerror = fail; i.src = src; });
+    const decode = blob => window.createImageBitmap ? createImageBitmap(blob) : viaImg(URL.createObjectURL(blob));
+    const bytes = () => {
+      const bin = atob(inlined.slice(inlined.indexOf(',') + 1)), u = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      return new Blob([u], { type: 'image/jpeg' });
+    };
+    const load = inlined
+      ? Promise.resolve().then(() => decode(bytes()))
+      : fetch(file).then(r => r.ok ? r.blob() : Promise.reject(new Error(r.status))).then(decode).catch(() => viaImg(file));
+    return worldSrc[w] = worldSrc[w] || load.catch(err => { delete worldSrc[w]; throw err; });
   }
 
   // Hints come from a real winning path: a remembered one if the board is on it, else a fresh search.
@@ -776,6 +789,8 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     ox = (W - cell * cols) / 2; oy = (H - cell * rows) / 2;
     bg.width = Math.round(innerWidth * dpr); bg.height = Math.round(innerHeight * dpr);
     buildSprites();
+    const shown = document.querySelector('#scene .on');
+    if (shown && shown.sceneImg) paintScene(shown, shown.sceneImg);
   }
 
   // Bubbles are painted once per size into sprites (soft shadow, bold candy body, one gentle highlight), then stamped each frame.
