@@ -131,6 +131,23 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
 .actions .primary{background:var(--sun);color:var(--abyss);border-color:transparent}
 .linkish{background:none;border:none;box-shadow:none;color:var(--mist);margin:10px auto 0;font-size:.85rem;padding:6px;text-decoration:underline;text-underline-offset:3px}
 
+.lvlbtn{background:none;border:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;padding:0 2px;gap:0;align-items:flex-end;border-radius:8px}
+.lvlbtn .num::after{content:"▾";font-size:.7em;margin-left:3px;opacity:.7}
+.levels-card{max-width:440px;max-height:min(86vh,720px);display:flex;flex-direction:column;padding:20px 16px 12px;text-align:left}
+.levels-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+.card .levels-head h2{font-size:1.6rem}
+.levels-list{overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:18px;padding:4px 2px 8px}
+.world-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px;font-weight:800}
+.world-head span{font-size:.8rem;color:var(--mist);font-weight:700;white-space:nowrap}
+.level-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.lv{padding:8px 0 7px;gap:5px;font:800 1.1rem var(--display);font-variant-numeric:tabular-nums}
+.lv.current{background:var(--sun);color:var(--abyss);border-color:transparent}
+.lv .dots{display:flex;gap:3px}
+.lv .dots i{width:6px;height:6px;border-radius:50%;background:rgba(234,251,246,.2)}
+.lv .dots i.on{background:#f3e9dc;box-shadow:0 0 4px rgba(255,238,215,.7)}
+.lv.current .dots i{background:rgba(5,20,31,.22);box-shadow:none}
+.lv.current .dots i.on{background:var(--abyss)}
+
 @keyframes rise{from{opacity:0;transform:translateY(24px) scale(.94)}to{opacity:1;transform:none}}
 @keyframes pearl{from{transform:scale(0)}to{transform:scale(1)}}
 @keyframes shimmer{to{background-position:-220% 0}}
@@ -149,7 +166,7 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     <h1>Bubble Lagoon</h1>
     <div class="right">
       <div class="stats">
-        <div class="stat"><span class="label">Level</span><span class="num" id="lvl">1</span></div>
+        <button class="stat lvlbtn" id="lvlBtn" type="button" aria-label="Choose a level"><span class="label">Level</span><span class="num" id="lvl">1</span></button>
         <div class="stat"><span class="label">Score</span><span class="num" id="score">0</span></div>
       </div>
       <button id="soundBtn" class="iconbtn" type="button" aria-label="Sound on"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4z"/><g id="soundWaves"><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></g></svg></button>
@@ -182,6 +199,16 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
       <button id="nextBtn" class="primary" type="button">Next level</button>
     </div>
     <button id="ovUndo" class="linkish" type="button">Undo last pop</button>
+  </div>
+</div>
+
+<div class="overlay" id="levels" hidden>
+  <div class="card levels-card" role="dialog" aria-labelledby="lvTitle">
+    <div class="levels-head">
+      <h2 id="lvTitle">Choose a level</h2>
+      <button id="lvClose" class="iconbtn" type="button" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <div class="levels-list" id="lvList"></div>
   </div>
 </div>
 
@@ -395,7 +422,7 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     const { solution } = clearRate(board, 3000, rng(l * 31 + v * 7));
     if (solution) recordPath(board, solution);
     score = 0; undoStack = []; ended = false; busy = false; armed = null; chain = null; parts = []; floats = [];
-    save.level = l; persist();
+    save.level = l; save.maxLevel = Math.max(save.maxLevel || 1, l); persist();
     $('overlay').hidden = true;
     showWorld(l);
     layout(); hud();
@@ -631,6 +658,35 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
       ? Promise.resolve().then(() => decode(bytes()))
       : fetch(file).then(r => r.ok ? r.blob() : Promise.reject(new Error(r.status))).then(decode).catch(() => viaImg(file));
     return worldSrc[w] = worldSrc[w] || load.catch(err => { delete worldSrc[w]; throw err; });
+  }
+
+  // Level picker: every level is open; each shows the pearls earned on it.
+  function openLevels() {
+    if (busy) return;
+    const last = Math.max(100, Math.ceil(Math.max(save.maxLevel || 1, level) / 10) * 10);
+    const pearlsOn = l => (save.best[l] && save.best[l].pearls) || 0;
+    const list = $('lvList');
+    list.textContent = '';
+    for (let start = 1; start <= last; start += 10) {
+      const n = Math.floor((start - 1) / 10), w = n % WORLDS.length;
+      let total = 0;
+      for (let l = start; l < start + 10; l++) total += pearlsOn(l);
+      const sec = document.createElement('section');
+      sec.innerHTML = `<div class="world-head">World ${n + 1} · ${WORLDS[w].name}<span>${total}/30 pearls</span></div><div class="level-grid"></div>`;
+      for (let l = start; l < start + 10; l++) {
+        const p = pearlsOn(l), b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'lv' + (l === level ? ' current' : '');
+        b.innerHTML = `${l}<span class="dots">${[0, 1, 2].map(i => `<i class="${i < p ? 'on' : ''}"></i>`).join('')}</span>`;
+        b.setAttribute('aria-label', `Level ${l}, ${p} pearl${p === 1 ? '' : 's'}`);
+        b.onclick = () => { $('levels').hidden = true; startLevel(l); };
+        sec.lastElementChild.appendChild(b);
+      }
+      list.appendChild(sec);
+    }
+    $('levels').hidden = false;
+    const cur = list.querySelector('.current');
+    if (cur) { list.scrollTop = cur.closest('section').offsetTop - list.offsetTop; cur.focus({ preventScroll: true }); }
   }
 
   // Hints come from a real winning path: a remembered one if the board is on it, else a fresh search.
@@ -1070,6 +1126,10 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     const row = rows - 1 - Math.floor((e.clientY - r.top - oy) / cell);
     if (c >= 0 && c < cols && row >= 0 && row < rows) tap(c, row);
   });
+  $('lvlBtn').onclick = openLevels;
+  $('lvClose').onclick = () => { $('levels').hidden = true; };
+  $('levels').addEventListener('click', e => { if (e.target === $('levels')) $('levels').hidden = true; });
+  addEventListener('keydown', e => { if (e.key === 'Escape') $('levels').hidden = true; });
   $('undoBtn').onclick = undo;
   $('ovUndo').onclick = undo;
   $('hintBtn').onclick = hint;
