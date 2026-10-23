@@ -4,29 +4,37 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@500;700;800&display=swap">
 <style>
-/* Layout: one-screen phone app — name + stats strip, a board that fills the remaining height, a thumb-reach control bar. One deliberate dusky-lagoon look (single theme). */
+/* Layout: one-screen phone app — name + stats strip, a glass board that fills the remaining height, a thumb-reach control bar with the rainbow stash in the middle. One deliberate deep-lagoon look (single theme). */
 :root{
-  --deep:#0b2b36;
-  --lagoon:#12505e;
-  --shallow:#1d7f84;
+  --abyss:#05141f;
+  --deep:#0a2f42;
+  --lagoon:#11586a;
+  --shallow:#1d8a92;
   --foam:#eafbf6;
   --mist:rgba(234,251,246,.66);
   --sun:#ffd166;
-  --panel:rgba(6,30,38,.5);
-  --line:rgba(234,251,246,.16);
+  --glass:rgba(255,255,255,.06);
+  --line:rgba(255,255,255,.13);
+  --rainbow:conic-gradient(from 0deg,#ff2e63,#ffb300,#14d36b,#1e88ff,#9a3dff,#ff2e63);
   --display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
   --body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
   color-scheme:dark;
 }
 html,body{height:100%}
 body{
-  background:var(--deep);
-  background-image:radial-gradient(130% 75% at 50% -5%,var(--shallow) 0%,var(--lagoon) 45%,var(--deep) 100%);
+  background:var(--abyss);
+  background-image:radial-gradient(140% 80% at 50% -10%,var(--shallow) 0%,var(--lagoon) 30%,var(--deep) 62%,var(--abyss) 100%);
   color:var(--foam);font-family:var(--body);
   overflow:hidden;overscroll-behavior:none;
   -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
 }
 #bg{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+/* World backdrops: two layers crossfade; a tint keeps bubbles and header text readable. */
+.scene{position:fixed;inset:0;pointer-events:none;--tint:.3}
+.scene canvas{position:absolute;inset:0;width:100%;height:100%;opacity:0;transition:opacity 1.4s ease}
+.scene canvas.on{opacity:1}
+.scene::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,16,26,calc(var(--tint) + .3)) 0%,rgba(4,16,26,var(--tint)) 20%,rgba(4,16,26,var(--tint)) 80%,rgba(4,16,26,calc(var(--tint) + .25)) 100%)}
+@media (prefers-reduced-motion:reduce){.scene canvas{transition:none}}
 .app{
   position:relative;height:100%;box-sizing:border-box;
   display:flex;flex-direction:column;gap:10px;
@@ -36,38 +44,63 @@ body{
   padding-block:12px;
 }
 .top{display:flex;align-items:center;justify-content:space-between;gap:12px}
-h1{font-family:var(--display);font-weight:800;font-size:clamp(1.55rem,6.5vw,2.1rem);line-height:1;margin:0;letter-spacing:-.01em}
-h1 span{color:var(--sun)}
-.stats{display:flex;gap:18px}
+h1{
+  font-family:var(--display);font-weight:800;font-size:clamp(1.5rem,6.4vw,2.2rem);line-height:1;margin:0;letter-spacing:-.01em;
+  background:linear-gradient(100deg,#eafbf6 0%,#9ff3ff 30%,#ffd166 55%,#ff9ec0 75%,#eafbf6 100%);
+  background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:shimmer 9s linear infinite;
+}
+.stats{display:flex;gap:14px}
 .stat{display:flex;flex-direction:column;align-items:flex-end}
 .label{font-size:.66rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--mist)}
 .num{font-family:var(--display);font-weight:800;font-size:1.4rem;line-height:1.1;font-variant-numeric:tabular-nums}
-.info{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.86rem;color:var(--mist)}
+.info{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:.86rem;color:var(--mist);min-height:1.3em}
+#tip{min-width:0;transition:color .3s}
+#tip.flash{color:var(--sun)}
+.info .count{white-space:nowrap}
 .info b{color:var(--foam)}
 .board{flex:1;min-height:0;position:relative}
 #cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:pointer}
-.bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.bar{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
 button{
-  font:800 .82rem var(--body);color:var(--foam);
-  background:var(--panel);border:1px solid var(--line);border-radius:16px;
-  padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;
-  transition:transform .12s ease,opacity .2s;
+  position:relative;
+  font:800 .78rem var(--body);color:var(--foam);
+  background:var(--glass);border:1px solid var(--line);border-radius:16px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 6px 16px rgba(0,0,0,.25);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  padding:10px 2px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;
+  transition:transform .12s ease,opacity .2s,box-shadow .3s;
 }
 button svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 button:active{transform:scale(.94)}
 button:disabled{opacity:.38}
 button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
+.orb{width:22px;height:22px;border-radius:50%;background:var(--rainbow);box-shadow:inset -2px -3px 5px rgba(0,0,0,.2);animation:spin 5s linear infinite}
+#rbBtn{border-color:rgba(255,220,250,.35)}
+#bmBtn{border-color:rgba(255,170,110,.35)}
+#rbBtn:disabled .orb{filter:grayscale(1);animation:none}
+#bmBtn:disabled svg{filter:grayscale(1)}
+#rbBtn.armed,#bmBtn.armed{box-shadow:0 0 0 2px #fff,0 0 22px rgba(255,210,180,.6);animation:pulse 1s ease-in-out infinite}
+.bombicon .body{fill:#2e3247;stroke:#8a90a8;stroke-width:1.5}
+.bombicon .spark{stroke:#ffc23d}
+.right{display:flex;align-items:center;gap:12px}
+.iconbtn{padding:8px;border-radius:50%}
+.iconbtn svg{width:20px;height:20px}
+.badge{position:absolute;top:-7px;right:-3px;min-width:20px;height:20px;box-sizing:border-box;border-radius:10px;padding:0 6px;background:var(--sun);color:var(--abyss);font:800 .74rem/20px var(--body);font-variant-numeric:tabular-nums}
+.badge.bump{animation:bump .5s cubic-bezier(.2,1.8,.4,1)}
+.fly{position:fixed;left:0;top:0;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;background:var(--rainbow);box-shadow:0 0 30px rgba(255,255,255,.8);pointer-events:none;z-index:5;transition:transform .85s cubic-bezier(.45,-0.35,.35,1),opacity .85s ease-in}
+.fly.bomb{background:radial-gradient(circle at 35% 30%,#5d6480,#1a1c2a 75%);box-shadow:0 0 24px rgba(255,150,60,.8)}
 
 .overlay{
-  position:fixed;inset:0;display:grid;place-items:center;
-  background:rgba(4,20,26,.55);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);
+  position:fixed;inset:0;display:grid;place-items:center;z-index:4;
+  background:rgba(3,14,22,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
 }
 .card{
   width:100%;max-width:340px;box-sizing:border-box;text-align:center;
-  background:linear-gradient(180deg,var(--lagoon),var(--deep));
-  border:1px solid var(--line);border-radius:28px;padding:28px 22px 22px;
-  box-shadow:0 24px 60px rgba(0,0,0,.4);
+  background:linear-gradient(180deg,rgba(29,138,146,.55),rgba(10,47,66,.92) 55%,rgba(5,20,31,.96));
+  border:1px solid var(--line);border-radius:28px;padding:28px 22px 20px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 24px 60px rgba(0,0,0,.5);
   animation:rise .45s cubic-bezier(.2,1.3,.4,1) both;
 }
 .card h2{font-family:var(--display);font-weight:800;font-size:2rem;line-height:1.05;margin:0;text-wrap:balance}
@@ -76,41 +109,68 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
 .pearl{width:38px;height:38px;border-radius:50%;background:rgba(234,251,246,.08);box-shadow:inset 0 0 0 2px rgba(234,251,246,.18)}
 .pearl.on{
   background:radial-gradient(circle at 34% 30%,#fff 0 10%,#f7f0e8 28%,#ddcfc0 72%,#b8a594 100%);
-  box-shadow:0 0 20px rgba(255,238,215,.5);
+  box-shadow:0 0 22px rgba(255,238,215,.55);
   animation:pearl .55s cubic-bezier(.2,1.6,.4,1) both;
 }
 .pearl.on:nth-child(2){animation-delay:.15s}
 .pearl.on:nth-child(3){animation-delay:.3s}
 .pearl-note{font-size:.8rem;color:var(--mist)}
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
-.actions button{flex-direction:row;justify-content:center;font-size:.95rem;padding:13px 8px}
-.actions .primary{background:var(--sun);color:var(--deep);border-color:transparent}
-.linkish{background:none;border:none;color:var(--mist);margin:12px auto 0;font-size:.85rem;padding:6px;text-decoration:underline;text-underline-offset:3px}
+.actions button,.wide{flex-direction:row;justify-content:center;font-size:.95rem;padding:13px 8px}
+.wide{width:100%;margin-top:10px;gap:8px}
+.actions .primary{background:var(--sun);color:var(--abyss);border-color:transparent}
+.linkish{background:none;border:none;box-shadow:none;color:var(--mist);margin:10px auto 0;font-size:.85rem;padding:6px;text-decoration:underline;text-underline-offset:3px}
+
+.lvlbtn{background:none;border:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;padding:0 2px;gap:0;align-items:flex-end;border-radius:8px}
+.lvlbtn .num::after{content:"▾";font-size:.7em;margin-left:3px;opacity:.7}
+.levels-card{max-width:440px;max-height:min(86vh,720px);display:flex;flex-direction:column;padding:20px 16px 12px;text-align:left}
+.levels-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+.card .levels-head h2{font-size:1.6rem}
+.levels-list{overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:18px;padding:4px 2px 8px}
+.world-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px;font-weight:800}
+.world-head span{font-size:.8rem;color:var(--mist);font-weight:700;white-space:nowrap}
+.level-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.lv{padding:8px 0 7px;gap:5px;font:800 1.1rem var(--display);font-variant-numeric:tabular-nums}
+.lv.current{background:var(--sun);color:var(--abyss);border-color:transparent}
+.lv .dots{display:flex;gap:3px}
+.lv .dots i{width:6px;height:6px;border-radius:50%;background:rgba(234,251,246,.2)}
+.lv .dots i.on{background:#f3e9dc;box-shadow:0 0 4px rgba(255,238,215,.7)}
+.lv.current .dots i{background:rgba(5,20,31,.22);box-shadow:none}
+.lv.current .dots i.on{background:var(--abyss)}
 
 @keyframes rise{from{opacity:0;transform:translateY(24px) scale(.94)}to{opacity:1;transform:none}}
 @keyframes pearl{from{transform:scale(0)}to{transform:scale(1)}}
-@media (prefers-reduced-motion:reduce){.card,.pearl.on{animation:none}}
+@keyframes shimmer{to{background-position:-220% 0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{50%{transform:scale(1.05)}}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.6)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.card,.pearl.on,h1,.orb,#rbBtn.armed,.badge.bump{animation:none}}
 </style>
 
+<div class="scene" id="scene" aria-hidden="true"><canvas></canvas><canvas></canvas></div>
 <canvas id="bg" aria-hidden="true"></canvas>
 <div class="app">
   <header class="top">
-    <h1>Bubble <span>Lagoon</span></h1>
-    <div class="stats">
-      <div class="stat"><span class="label">Level</span><span class="num" id="lvl">1</span></div>
-      <div class="stat"><span class="label">Score</span><span class="num" id="score">0</span></div>
+    <h1>Bubble Lagoon</h1>
+    <div class="right">
+      <div class="stats">
+        <button class="stat lvlbtn" id="lvlBtn" type="button" aria-label="Choose a level"><span class="label">Level</span><span class="num" id="lvl">1</span></button>
+        <div class="stat"><span class="label">Score</span><span class="num" id="score">0</span></div>
+      </div>
+      <button id="soundBtn" class="iconbtn" type="button" aria-label="Sound on"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4z"/><g id="soundWaves"><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></g></svg></button>
     </div>
   </header>
   <div class="info">
-    <span>Tap 2+ matching bubbles to pop them</span>
-    <span><b id="left">0</b> left · best <b id="best">–</b></span>
+    <span id="tip">Tap 2+ matching bubbles to pop them</span>
+    <span class="count"><b id="left">0</b> left · best <b id="best">–</b></span>
   </div>
   <div class="board" id="board"><canvas id="cv" aria-label="Bubble board"></canvas></div>
   <nav class="bar">
     <button id="undoBtn" type="button"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>Undo</button>
     <button id="hintBtn" type="button"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>Hint</button>
+    <button id="rbBtn" type="button" aria-label="Use a rainbow bubble"><span class="orb"></span>Rainbow<span class="badge" id="rbCount">0</span></button>
+    <button id="bmBtn" type="button" aria-label="Use a bomb bubble"><svg class="bombicon" viewBox="0 0 24 24"><circle class="body" cx="10" cy="14" r="7"/><path d="M14.5 8.5 17 6"/><path class="spark" d="M19.5 2v2M22 4.5h-2M21.3 2.7l-1.2 1.2"/></svg>Bomb<span class="badge" id="bmCount">0</span></button>
     <button id="restartBtn" type="button"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Restart</button>
-    <button id="soundBtn" type="button"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4z"/><g id="soundWaves"><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></g></svg><span id="soundLabel">Sound</span></button>
   </nav>
 </div>
 
@@ -120,11 +180,23 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     <p id="ovText">Every bubble popped.</p>
     <div class="pearls" id="pearls"><span class="pearl"></span><span class="pearl"></span><span class="pearl"></span></div>
     <div class="pearl-note" id="pearlNote">Clear the board for all 3 pearls</div>
+    <button id="ovRainbow" class="wide" type="button" hidden><span class="orb"></span><span id="ovRainbowLabel">Use a rainbow</span></button>
+    <button id="ovBomb" class="wide" type="button" hidden><svg class="bombicon" viewBox="0 0 24 24"><circle class="body" cx="10" cy="14" r="7"/><path d="M14.5 8.5 17 6"/><path class="spark" d="M19.5 2v2M22 4.5h-2M21.3 2.7l-1.2 1.2"/></svg><span id="ovBombLabel">Use a bomb</span></button>
     <div class="actions">
       <button id="againBtn" type="button">Play again</button>
       <button id="nextBtn" class="primary" type="button">Next level</button>
     </div>
     <button id="ovUndo" class="linkish" type="button">Undo last pop</button>
+  </div>
+</div>
+
+<div class="overlay" id="levels" hidden>
+  <div class="card levels-card" role="dialog" aria-labelledby="lvTitle">
+    <div class="levels-head">
+      <h2 id="lvTitle">Choose a level</h2>
+      <button id="lvClose" class="iconbtn" type="button" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <div class="levels-list" id="lvList"></div>
   </div>
 </div>
 
@@ -135,29 +207,43 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
   const bg = $('bg'), bctx = bg.getContext('2d');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const KEY = 'bubble-lagoon-v1';
+  const DISPLAY = '"Baloo 2","Trebuchet MS",sans-serif';
 
   const PAL = [
-    { base: '#ff7a6b', light: '#ffd0c8', dark: '#c4413a' }, // coral
-    { base: '#ffcf5a', light: '#fff3c7', dark: '#cf9214' }, // sunfish
-    { base: '#4fe0a8', light: '#cbf9e6', dark: '#1a9a70' }, // sea glass
-    { base: '#5ab6ff', light: '#d0eaff', dark: '#2270c0' }, // shallows
-    { base: '#c794ff', light: '#eedcff', dark: '#8150c6' }, // anemone
+    { base: '#ff2e63', light: '#ff7096', dark: '#c4104a' }, // coral
+    { base: '#ffb300', light: '#ffd04d', dark: '#e07b00' }, // sunfish
+    { base: '#14d36b', light: '#5ff09b', dark: '#079a4c' }, // sea glass
+    { base: '#1e88ff', light: '#5fadff', dark: '#0b5bd1' }, // shallows
+    { base: '#9a3dff', light: '#bd7dff', dark: '#6a17d6' }, // anemone
   ];
+  const RAINBOW_STOPS = ['#ff2e63', '#ffb300', '#14d36b', '#1e88ff', '#9a3dff', '#ff2e63'];
+  const RB = 9;       // color code for a rainbow bubble: matches every color
+  const BOMB = 8;     // color code for a bomb bubble: tap to blast the 3×3 around it
+  const isSpecial = b => b.color === RB || b.color === BOMB;
+  const TIDAL = 12;   // pop this many at once to earn a rainbow
+  const SPLASH = 8;   // pop this many at once to earn a bomb
   // Major pentatonic steps, so every pop chain sounds like a little tune.
   const SCALE = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26, 28, 31, 33, 36];
 
   let save = { level: 1, best: {}, sound: true };
+  let firstGift = false;
   try {
     const s = JSON.parse(localStorage.getItem(KEY));
     if (s && typeof s.level === 'number') save = Object.assign(save, s);
   } catch (e) {}
+  if (typeof save.rainbows !== 'number') { save.rainbows = 1; firstGift = true; }
+  if (typeof save.bombs !== 'number') { save.bombs = 1; firstGift = true; }
+  const stashKey = kind => kind === 'bomb' ? 'bombs' : 'rainbows';
   const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) {} };
 
   let level = 1, cols = 6, rows = 8, nColors = 3, grid = [], score = 0, undoStack = [];
-  let busy = false, ended = false, chain = null, nextId = 1;
+  let busy = false, ended = false, armed = null, chain = null, nextId = 1, shake = 0;
   let parts = [], floats = [], now = 0, last = 0;
   let W = 0, H = 0, cell = 40, ox = 0, oy = 0, dpr = 1;
+  let sprites = [], gloss = null, SP = 0;
 
+  // ===== shared board logic (also run by the level-vetting script; keep it pure) =====
+  // A compact board is an array of non-empty columns, each listing colors bottom-up.
   function rng(seed) {
     return () => {
       seed = seed + 0x6D2B79F5 | 0;
@@ -166,10 +252,142 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
       return ((t ^ t >>> 14) >>> 0) / 4294967296;
     };
   }
+  // Difficulty ramps gently: a new color only arrives at levels 7 and 15, and boards start
+  // "clumpy" (bubbles often copy a neighbor's color) and get less clumpy level by level.
   function cfg(l) {
-    const c = l <= 3 ? 6 : l <= 8 ? 7 : 8;
-    return { nColors: l <= 2 ? 3 : l <= 5 ? 4 : 5, cols: c, rows: c + 2 };
+    const nColors = l <= 6 ? 3 : l <= 14 ? 4 : 5;
+    const firstOfTier = nColors === 3 ? 1 : nColors === 4 ? 7 : 15;
+    const c = l <= 4 ? 6 : l <= 10 ? 7 : 8;
+    return { nColors, cols: c, rows: c + 2, clump: Math.max(0.3, 0.5 - 0.04 * (l - firstOfTier)) };
   }
+  function boardFor(l, v) {
+    const conf = cfg(l), R = rng(l * 7919 + 13 + v * 104729), s = [];
+    for (let c = 0; c < conf.cols; c++) {
+      s[c] = [];
+      for (let r = 0; r < conf.rows; r++) {
+        const near = [];
+        if (r > 0) near.push(s[c][r - 1]);
+        if (c > 0) near.push(s[c - 1][r]);
+        s[c][r] = near.length && R() < conf.clump ? near[Math.floor(R() * near.length)] : Math.floor(R() * conf.nColors);
+      }
+    }
+    return s;
+  }
+  // The cells a tap at (c, r) pops, following the same rules as the live game.
+  function sCells(s, c, r) {
+    const at = (x, y) => x >= 0 && x < s.length && y >= 0 && y < s[x].length ? s[x][y] : -1;
+    const seen = new Set(), out = [];
+    const take = (x, y) => { seen.add(x * 100 + y); out.push([x, y]); };
+    const flood = (x0, y0, color) => {
+      if (seen.has(x0 * 100 + y0)) return;
+      const start = out.length;
+      take(x0, y0);
+      for (let i = start; i < out.length; i++) {
+        const [x, y] = out[i];
+        for (const [dx, dy] of DIRS) {
+          const nx = x + dx, ny = y + dy, w = at(nx, ny);
+          if (w < 0 || seen.has(nx * 100 + ny) || (w !== color && w !== RB)) continue;
+          take(nx, ny);
+        }
+      }
+    };
+    const v = s[c][r];
+    if (v === BOMB) {
+      take(c, r);
+      for (let i = 0; i < out.length; i++) {
+        const [x, y] = out[i];
+        if (s[x][y] !== BOMB) continue;
+        for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++)
+          if (at(x + dx, y + dy) >= 0 && !seen.has((x + dx) * 100 + y + dy)) take(x + dx, y + dy);
+      }
+    } else if (v === RB) {
+      take(c, r);
+      for (const [dx, dy] of DIRS) { const w = at(c + dx, r + dy); if (w >= 0 && w !== BOMB) flood(c + dx, r + dy, w); }
+    } else flood(c, r, v);
+    return out;
+  }
+  function sMoves(s) {
+    const covered = new Set(), moves = [];
+    for (let c = 0; c < s.length; c++) for (let r = 0; r < s[c].length; r++) {
+      const v = s[c][r];
+      if (v === RB || v === BOMB) { moves.push({ c, r, cells: sCells(s, c, r) }); continue; }
+      if (covered.has(c * 100 + r)) continue;
+      const cells = sCells(s, c, r);
+      for (const [x, y] of cells) if (s[x][y] === v) covered.add(x * 100 + y);
+      if (cells.length > 1) moves.push({ c, r, cells });
+    }
+    return moves;
+  }
+  function sApply(s, cells) {
+    const gone = new Set(cells.map(([x, y]) => x * 100 + y)), out = [];
+    s.forEach((col, c) => { const k = col.filter((_, r) => !gone.has(c * 100 + r)); if (k.length) out.push(k); });
+    return out;
+  }
+  const sKey = s => s.map(col => col.join('')).join('|');
+  const sCount = s => s.reduce((n, col) => n + col.length, 0);
+  function playout(s, rand) {
+    const path = [];
+    for (;;) {
+      const ms = sMoves(s);
+      if (!ms.length) return { left: sCount(s), path };
+      const m = ms[Math.floor(rand() * ms.length)];
+      path.push(m); s = sApply(s, m.cells);
+    }
+  }
+  // How often tapping random valid groups clears the board. Any clear also proves it's solvable.
+  function clearRate(s, n, rand) {
+    let clears = 0, solution = null;
+    for (let i = 0; i < n; i++) {
+      const p = playout(s, rand);
+      if (!p.left) { clears++; solution = solution || p.path; }
+    }
+    return { rate: clears / n, solution };
+  }
+  // Depth-first search for a full clear, within a time budget.
+  function solve(s, ms) {
+    const t0 = performance.now(), seen = new Set();
+    let timedOut = false, bestLeft = Infinity, best = null;
+    function dfs(s, left, first) {
+      if (left === 0) return [];
+      if (performance.now() - t0 > ms) { timedOut = true; return null; }
+      const k = sKey(s);
+      if (seen.has(k)) return null;
+      seen.add(k);
+      const counts = {};
+      let special = false;
+      for (const col of s) for (const v of col) { if (v === RB || v === BOMB) special = true; counts[v] = (counts[v] || 0) + 1; }
+      const stuck = !special && Object.values(counts).some(n => n === 1);
+      const moves = stuck ? [] : sMoves(s);
+      if (!moves.length) { if (left < bestLeft) { bestLeft = left; best = first; } return null; }
+      moves.sort((a, b) => a.cells.length - b.cells.length);
+      for (const m of moves) {
+        const rest = dfs(sApply(s, m.cells), left - m.cells.length, first || m);
+        if (rest) return [m, ...rest];
+        if (timedOut) return null;
+      }
+      return null;
+    }
+    const path = dfs(s, sCount(s), null);
+    return { path, proven: !path && !timedOut, best };
+  }
+  // Levels 1–100 use board variants pre-checked by tools/vet-levels.js: each one is clearable,
+  // and how often random play clears it eases down from about 35% at level 1 to about 3%.
+  const VARIANTS = [2,1,1,0,3,0,0,0,12,7,4,2,1,4,10,10,7,8,45,16,10,20,16,39,41,70,51,16,4,42,40,23,11,38,3,30,28,0,38,84,53,5,53,9,35,17,20,13,1,3,16,34,28,27,63,34,67,22,4,38,71,19,34,1,13,82,19,3,3,41,1,19,18,32,7,12,20,1,80,14,14,8,59,8,144,8,7,9,89,65,21,20,45,47,41,97,30,13,31,30];
+  const targetRate = l => Math.max(0.03, 0.35 * Math.pow(0.88, l - 1));
+  function pickVariant(l, plays, maxMs = Infinity) {
+    const t0 = performance.now();
+    let best = 0, bestRate = -1;
+    for (let v = 0; v < 400; v++) {
+      if (performance.now() - t0 > maxMs && bestRate >= 0 && bestRate < 10) return best;
+      const { rate } = clearRate(boardFor(l, v), plays, rng(l * 31 + v * 7));
+      if (rate >= targetRate(l) && rate <= targetRate(l) * 2) return v;
+      const gap = rate >= targetRate(l) ? rate - targetRate(l) : 10 + targetRate(l) - rate;
+      if (bestRate < 0 || gap < bestRate) { best = v; bestRate = gap; }
+      if (v >= 40 && bestRate < 10) return best; // close enough: clearable and at least as findable as the target
+    }
+    return best;
+  }
+  // ===== end shared board logic =====
   function mk(color, c, r, fromTop) {
     return {
       id: nextId++, color, x: c,
@@ -184,39 +402,73 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
   function startLevel(l) {
     level = l;
     ({ nColors, cols, rows } = cfg(l));
-    const R = rng(l * 7919 + 13);
-    grid = [];
-    for (let c = 0; c < cols; c++) {
-      grid[c] = [];
-      for (let r = 0; r < rows; r++) grid[c][r] = mk(Math.floor(R() * nColors), c, r, true);
-    }
-    score = 0; undoStack = []; ended = false; busy = false; chain = null; parts = []; floats = [];
-    save.level = l; persist();
+    const v = VARIANTS[l - 1] ?? pickVariant(l, 300, 2500);
+    const board = boardFor(l, v);
+    grid = board.map((col, c) => col.map((k, r) => mk(k, c, r, true)));
+    // Remember one winning path so the first hints are instant.
+    hintMap = new Map();
+    const { solution } = clearRate(board, 3000, rng(l * 31 + v * 7));
+    if (solution) recordPath(board, solution);
+    score = 0; undoStack = []; ended = false; busy = false; armed = null; chain = null; parts = []; floats = [];
+    save.level = l; save.maxLevel = Math.max(save.maxLevel || 1, l); persist();
     $('overlay').hidden = true;
+    showWorld(l);
     layout(); hud();
   }
 
   // ---------- puzzle logic ----------
   const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-  function findGroup(c, r) {
-    const color = grid[c][r].color, seen = new Set([c * 100 + r]), out = [[c, r]];
-    for (let i = 0; i < out.length; i++) {
+  const inside = (x, y) => x >= 0 && y >= 0 && x < cols && y < rows;
+  // Breadth-first from the seed, so pops ripple outward from the tap.
+  // Rainbows join any color's group.
+  function flood(c, r, color, seen, out) {
+    const start = out.length;
+    if (seen.has(c * 100 + r)) return;
+    seen.add(c * 100 + r); out.push([c, r]);
+    for (let i = start; i < out.length; i++) {
       const [x, y] = out[i];
       for (const [dx, dy] of DIRS) {
         const nx = x + dx, ny = y + dy;
-        if (nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue;
+        if (!inside(nx, ny) || seen.has(nx * 100 + ny)) continue;
         const b = grid[nx][ny];
-        if (!b || b.color !== color || seen.has(nx * 100 + ny)) continue;
+        if (!b || (b.color !== color && b.color !== RB)) continue;
         seen.add(nx * 100 + ny); out.push([nx, ny]);
       }
     }
-    return out; // breadth-first, so pops ripple outward from the tap
+  }
+  function findGroup(c, r) {
+    const seen = new Set(), out = [], b = grid[c][r];
+    if (b.color !== RB) { flood(c, r, b.color, seen, out); return out; }
+    // Tapping a rainbow pops it together with every group touching it.
+    seen.add(c * 100 + r); out.push([c, r]);
+    for (const [dx, dy] of DIRS) {
+      const nx = c + dx, ny = r + dy;
+      if (inside(nx, ny) && grid[nx][ny] && grid[nx][ny].color !== BOMB) flood(nx, ny, grid[nx][ny].color, seen, out);
+    }
+    return out;
+  }
+  // A bomb clears the 3×3 around it; other bombs caught in the blast go off too.
+  function blast(c, r) {
+    const seen = new Set([c * 100 + r]), out = [[c, r]];
+    for (let i = 0; i < out.length; i++) {
+      const [x, y] = out[i];
+      if (grid[x][y].color !== BOMB) continue;
+      for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+        const nx = x + dx, ny = y + dy;
+        if (!inside(nx, ny) || !grid[nx][ny] || seen.has(nx * 100 + ny)) continue;
+        seen.add(nx * 100 + ny); out.push([nx, ny]);
+      }
+    }
+    const d = ([x, y]) => (x - c) ** 2 + (y - r) ** 2;
+    return out.sort((a, b) => d(a) - d(b));
   }
   function hasMoves() {
+    const match = (a, b) => b && (a.color === b.color || b.color === RB);
     for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) {
       const b = grid[c][r]; if (!b) continue;
-      if (c + 1 < cols && grid[c + 1][r] && grid[c + 1][r].color === b.color) return true;
-      if (r + 1 < rows && grid[c][r + 1] && grid[c][r + 1].color === b.color) return true;
+      if (isSpecial(b)) return true;
+      if (c + 1 < cols && match(b, grid[c + 1][r])) return true;
+      if (r + 1 < rows && match(b, grid[c][r + 1])) return true;
     }
     return false;
   }
@@ -233,25 +485,74 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     const blank = () => Array(rows).fill(null);
     grid = [...Array.from({ length: leftPad }, blank), ...filled, ...Array.from({ length: empty - leftPad }, blank)];
   }
+  const pushUndo = () => {
+    undoStack.push({ g: colorsOf(), score, rainbows: save.rainbows, bombs: save.bombs });
+    if (undoStack.length > 80) undoStack.shift();
+  };
 
   function tap(c, r) {
     if (busy || ended) return;
     const b = grid[c] && grid[c][r];
     if (!b) return;
-    const g = findGroup(c, r);
-    if (g.length < 2) { b.wob = 1; boop(); return; }
-    undoStack.push({ g: colorsOf(), score });
-    if (undoStack.length > 80) undoStack.shift();
+    if (armed) { placeSpecial(b); return; }
+    const isBomb = b.color === BOMB;
+    const g = isBomb ? blast(c, r) : findGroup(c, r);
+    if (g.length < 2 && !isSpecial(b)) { b.wob = 1; boop(); return; }
+    pushUndo();
     busy = true;
-    const step = Math.min(0.05, 0.7 / g.length);
+    const step = isBomb ? Math.min(0.03, 0.4 / g.length) : Math.min(0.05, 0.7 / g.length);
     g.forEach(([x, y], i) => { const t = grid[x][y]; t.popAt = now + i * step; t.popIdx = i; });
-    const gain = g.length * (g.length - 1) * 5;
+    const gain = isBomb ? g.length * 20 : g.length * (g.length - 1) * 5 + (b.color === RB ? 50 : 0);
     score += gain;
-    floats.push({ x: px(b.x), y: py(b.y), text: '+' + gain, life: 1, size: 1 });
-    if (g.length >= 15) floats.push({ x: px(b.x), y: py(b.y) - cell, text: 'Tidal wave!', life: 1.3, size: 1.5 });
-    else if (g.length >= 9) floats.push({ x: px(b.x), y: py(b.y) - cell, text: 'Splash!', life: 1.2, size: 1.3 });
+    const fx = px(b.x), fy = py(b.y);
+    floats.push({ x: fx, y: fy, text: '+' + gain, life: 1, size: 1 });
+    if (isBomb) {
+      floats.push({ x: fx, y: fy - cell, text: 'Boom!', life: 1.2, size: 1.4 });
+      parts.push({ kind: 'flash', x: fx, y: fy, r: cell * 2.2, life: 1, col: '#ffa04a' });
+      parts.push({ kind: 'ring', x: fx, y: fy, r: cell * 0.6, life: 1, col: '#ffc23d' });
+      if (!reduced) shake = cell * 0.25;
+      boom();
+    } else if (g.length >= TIDAL) {
+      floats.push({ x: fx, y: fy - cell, text: 'Tidal wave!', life: 1.4, size: 1.5, rainbow: true });
+      save.rainbows++; persist();
+      setTimeout(() => flyToStash(fx, fy, 'rainbow'), 350);
+      tip('Tidal wave! You earned a rainbow bubble.');
+    } else if (g.length >= SPLASH) {
+      floats.push({ x: fx, y: fy - cell, text: 'Splash!', life: 1.2, size: 1.3 });
+      save.bombs++; persist();
+      setTimeout(() => flyToStash(fx, fy, 'bomb'), 350);
+      tip('Splash! You earned a bomb bubble.');
+    }
+    if (!isBomb && g.length >= 8 && !reduced) shake = Math.min(cell * 0.2, (g.length - 6) * 1.1);
     chain = { cells: g, end: now + g.length * step + 0.08 };
-    buzz(8); hud();
+    buzz(g.length >= 8 ? 20 : 8); hud();
+  }
+
+  function placeSpecial(b) {
+    if (isSpecial(b)) return;
+    const kind = armed;
+    pushUndo();
+    b.color = kind === 'bomb' ? BOMB : RB; b.wob = 1; b.scale = 0.4;
+    armed = null;
+    save[stashKey(kind)]--; persist();
+    sparkleBurst(px(b.x), py(b.y), kind === 'bomb' ? 6 : 14);
+    buzz(15);
+    if (kind === 'bomb') {
+      note(-7, 0, 0.18, 'triangle', 0.1, 0.7);
+      tip('Bomb placed! Tap it to blast every bubble around it.');
+    } else {
+      shimmer();
+      tip('Rainbow placed! It matches every color. Tap it to pop it with all its neighbors.');
+    }
+    hud();
+  }
+
+  function setArmed(kind) {
+    if (kind && (save[stashKey(kind)] < 1 || busy || ended)) return;
+    armed = kind;
+    tip(kind ? `Tap any bubble to turn it into a ${kind}.` : null);
+    if (kind) note(12, 0, 0.2, 'triangle', 0.07, 1);
+    hud();
   }
 
   function runChain() {
@@ -271,7 +572,7 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
       if (!hasMoves()) {
         ended = true;
         const left = remaining();
-        if (left === 0) { score += 1000; floats.push({ x: W / 2, y: H / 2, text: '+1000', life: 1.4, size: 1.6 }); }
+        if (left === 0) { score += 1000; floats.push({ x: W / 2, y: H / 2, text: '+1000', life: 1.4, size: 1.6, rainbow: true }); }
         hud();
         setTimeout(() => showEnd(left), left === 0 ? 1100 : 750);
         if (left === 0) setTimeout(chime, 250);
@@ -282,19 +583,125 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
   function undo() {
     if (busy || !undoStack.length) return;
     const s = undoStack.pop();
-    grid = fromColors(s.g); score = s.score; ended = false;
+    grid = fromColors(s.g); score = s.score; ended = false; armed = null;
+    if (typeof s.rainbows === 'number') save.rainbows = s.rainbows;
+    if (typeof s.bombs === 'number') save.bombs = s.bombs;
+    persist();
     $('overlay').hidden = true;
-    swish(); hud();
+    swish(); tip(null); hud();
+  }
+  // Each world of 10 levels has its own backdrop (made in Canva); past level 100 they repeat.
+  // tint darkens brighter or busier images so the bubbles stay easy to see.
+  const WORLDS = [
+    { name: 'Bubble Bath', tint: 0.35 },
+    { name: 'Candlelit Bath', tint: 0.15 },
+    { name: 'The Fishbowl', tint: 0.45 },
+    { name: 'Fishbowl by Moonlight', tint: 0.12 },
+    { name: 'Koi Pond', tint: 0.22 },
+    { name: 'Lantern Pond', tint: 0.1 },
+    { name: 'Caribbean Reef', tint: 0.32 },
+    { name: 'Coral Sunset', tint: 0.15 },
+    { name: "Mermaid's Castle", tint: 0.32 },
+    { name: 'Castle by Moonlight', tint: 0.1 },
+  ].map((w, i) => ({ ...w, file: `backgrounds/world${String(i + 1).padStart(2, '0')}.jpg` }));
+  let worldShown = -1, sceneLayer = 0;
+  function showWorld(l) {
+    const w = Math.floor((l - 1) / 10) % WORLDS.length;
+    if ((l - 1) % 10 === 0) tip(`Welcome to world ${w + 1}: ${WORLDS[w].name}!`);
+    if (w === worldShown) return;
+    worldShown = w;
+    worldImage(w).then(img => {
+      if (worldShown !== w) return;
+      const layers = $('scene').children, next = layers[sceneLayer ^ 1];
+      paintScene(next, img);
+      $('scene').style.setProperty('--tint', WORLDS[w].tint);
+      next.classList.add('on'); layers[sceneLayer].classList.remove('on');
+      sceneLayer ^= 1;
+      worldImage((w + 1) % WORLDS.length); // warm up the next world
+    }, () => {});
+  }
+  // Backdrops are painted onto canvases, cover-fit to the screen.
+  function paintScene(c, img) {
+    const d = Math.min(2, window.devicePixelRatio || 1);
+    c.width = Math.round(innerWidth * d); c.height = Math.round(innerHeight * d);
+    const s = Math.max(c.width / img.width, c.height / img.height), w = img.width * s, h = img.height * s;
+    c.getContext('2d').drawImage(img, (c.width - w) / 2, (c.height - h) / 2, w, h);
+    c.sceneImg = img;
+  }
+  // The artifact viewer can refuse to load images of any kind, so the artifact build
+  // (tools/build.js) inlines each backdrop's bytes in window.WORLD_IMAGES and they're decoded with
+  // createImageBitmap, which loads nothing. Elsewhere the image file is fetched and decoded the
+  // same way, with a plain <img> load as the last resort (e.g. when opened from disk).
+  const worldSrc = {};
+  function worldImage(w) {
+    const file = WORLDS[w].file, inlined = window.WORLD_IMAGES && window.WORLD_IMAGES[w];
+    const viaImg = src => new Promise((ok, fail) => { const i = new Image(); i.onload = () => ok(i); i.onerror = fail; i.src = src; });
+    const decode = blob => window.createImageBitmap ? createImageBitmap(blob) : viaImg(URL.createObjectURL(blob));
+    const bytes = () => {
+      const bin = atob(inlined.slice(inlined.indexOf(',') + 1)), u = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      return new Blob([u], { type: 'image/jpeg' });
+    };
+    const load = inlined
+      ? Promise.resolve().then(() => decode(bytes()))
+      : fetch(file).then(r => r.ok ? r.blob() : Promise.reject(new Error(r.status))).then(decode).catch(() => viaImg(file));
+    return worldSrc[w] = worldSrc[w] || load.catch(err => { delete worldSrc[w]; throw err; });
+  }
+
+  // Level picker: every level is open; each shows the pearls earned on it.
+  function openLevels() {
+    if (busy) return;
+    const last = Math.max(100, Math.ceil(Math.max(save.maxLevel || 1, level) / 10) * 10);
+    const pearlsOn = l => (save.best[l] && save.best[l].pearls) || 0;
+    const list = $('lvList');
+    list.textContent = '';
+    for (let start = 1; start <= last; start += 10) {
+      const n = Math.floor((start - 1) / 10), w = n % WORLDS.length;
+      let total = 0;
+      for (let l = start; l < start + 10; l++) total += pearlsOn(l);
+      const sec = document.createElement('section');
+      sec.innerHTML = `<div class="world-head">World ${n + 1} · ${WORLDS[w].name}<span>${total}/30 pearls</span></div><div class="level-grid"></div>`;
+      for (let l = start; l < start + 10; l++) {
+        const p = pearlsOn(l), b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'lv' + (l === level ? ' current' : '');
+        b.innerHTML = `${l}<span class="dots">${[0, 1, 2].map(i => `<i class="${i < p ? 'on' : ''}"></i>`).join('')}</span>`;
+        b.setAttribute('aria-label', `Level ${l}, ${p} pearl${p === 1 ? '' : 's'}`);
+        b.onclick = () => { $('levels').hidden = true; startLevel(l); };
+        sec.lastElementChild.appendChild(b);
+      }
+      list.appendChild(sec);
+    }
+    $('levels').hidden = false;
+    const cur = list.querySelector('.current');
+    if (cur) { list.scrollTop = cur.closest('section').offsetTop - list.offsetTop; cur.focus({ preventScroll: true }); }
+  }
+
+  // Hints come from a real winning path: a remembered one if the board is on it, else a fresh search.
+  let hintMap = new Map();
+  function recordPath(s, path) {
+    for (const m of path) { hintMap.set(sKey(s), m); s = sApply(s, m.cells); }
+  }
+  function compactBoard() {
+    const used = [];
+    grid.forEach((col, c) => { if (col[0]) used.push(c); });
+    return { used, s: used.map(c => grid[c].filter(Boolean).map(b => b.color)) };
   }
   function hint() {
     if (busy || ended) return;
-    let best = null;
-    for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) {
-      if (!grid[c][r]) continue;
-      const g = findGroup(c, r);
-      if (g.length > 1 && (!best || g.length > best.length)) best = g;
+    const { used, s } = compactBoard();
+    let move = hintMap.get(sKey(s));
+    if (!move) {
+      const res = solve(s, 800);
+      if (res.path) { recordPath(s, res.path); move = res.path[0]; }
+      else {
+        move = res.best;
+        if (res.proven) tip(save.rainbows + save.bombs > 0
+          ? 'No full clear from here. Undo a few pops, or use a bomb or rainbow.'
+          : 'No full clear from here. Undo a few pops to find another way.');
+      }
     }
-    if (best) for (const [x, y] of best) grid[x][y].hint = now + 1.6;
+    if (move) for (const [x, y] of move.cells) grid[used[x]][y].hint = now + 1.6;
   }
 
   function showEnd(left) {
@@ -308,8 +715,22 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
       : `${left} bubble${left === 1 ? '' : 's'} left drifting. Score ${score.toLocaleString()}.`;
     [...$('pearls').children].forEach((p, i) => p.classList.toggle('on', i < pearls));
     $('pearlNote').textContent = pearls === 3 ? 'All 3 pearls' : left <= 3 ? 'Clear every bubble for 3 pearls' : 'Leave 3 or fewer for 2 pearls · clear all for 3';
+    const canRainbow = left > 0 && save.rainbows > 0, canBomb = left > 0 && save.bombs > 0;
+    $('ovRainbow').hidden = !canRainbow;
+    $('ovRainbowLabel').textContent = `Keep going with a rainbow (${save.rainbows})`;
+    $('ovBomb').hidden = !canBomb;
+    $('ovBombLabel').textContent = `Keep going with a bomb (${save.bombs})`;
     $('overlay').hidden = false;
-    $('nextBtn').focus({ preventScroll: true });
+    (canRainbow ? $('ovRainbow') : canBomb ? $('ovBomb') : $('nextBtn')).focus({ preventScroll: true });
+  }
+
+  let tipTimer = 0;
+  function tip(msg) {
+    clearTimeout(tipTimer);
+    const el = $('tip');
+    if (!msg) { el.textContent = 'Tap 2+ matching bubbles to pop them'; el.classList.remove('flash'); return; }
+    el.textContent = msg; el.classList.add('flash');
+    if (!armed) tipTimer = setTimeout(() => tip(null), 4200);
   }
 
   function hud() {
@@ -319,10 +740,37 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     const b = save.best[level];
     $('best').textContent = b ? b.score.toLocaleString() : '–';
     $('undoBtn').disabled = !undoStack.length;
+    $('rbCount').textContent = save.rainbows;
+    $('rbBtn').disabled = save.rainbows < 1 && armed !== 'rainbow';
+    $('rbBtn').classList.toggle('armed', armed === 'rainbow');
+    $('bmCount').textContent = save.bombs;
+    $('bmBtn').disabled = save.bombs < 1 && armed !== 'bomb';
+    $('bmBtn').classList.toggle('armed', armed === 'bomb');
     $('soundWaves').innerHTML = save.sound
       ? '<path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>'
       : '<path d="m22 9-6 6M16 9l6 6"/>';
-    $('soundLabel').textContent = save.sound ? 'Sound' : 'Muted';
+    $('soundBtn').setAttribute('aria-label', save.sound ? 'Sound on' : 'Sound off');
+  }
+
+  function flyToStash(x, y, kind) {
+    const btn = kind === 'bomb' ? 'bmBtn' : 'rbBtn';
+    const r = cv.getBoundingClientRect(), t = $(btn).getBoundingClientRect();
+    const sx = r.left + x, sy = r.top + y;
+    const el = document.createElement('div');
+    el.className = kind === 'bomb' ? 'fly bomb' : 'fly';
+    el.style.transform = `translate(${sx}px,${sy}px) scale(.3)`;
+    document.body.appendChild(el);
+    shimmer();
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      el.style.transform = `translate(${t.left + t.width / 2}px,${t.top + t.height / 2 - 6}px) scale(.55)`;
+      el.style.opacity = '.4';
+    }));
+    setTimeout(() => {
+      el.remove();
+      const badge = $(kind === 'bomb' ? 'bmCount' : 'rbCount');
+      badge.classList.remove('bump'); void badge.offsetWidth; badge.classList.add('bump');
+      note(19, 0, 0.3, 'triangle', 0.08, 1);
+    }, 880);
   }
 
   // ---------- sound ----------
@@ -349,12 +797,32 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
   const popNote = i => note(SCALE[Math.min(i, SCALE.length - 1)], 0, 0.24, 'sine', 0.13, 1.8);
   const boop = () => note(-5, 0, 0.16, 'triangle', 0.07, 0.8);
   const swish = () => { note(7, 0, 0.12, 'sine', 0.06, 0.7); note(0, 0.06, 0.14, 'sine', 0.06, 0.7); };
+  const shimmer = () => [12, 16, 19, 24, 28, 31].forEach((s, i) => note(s, i * 0.04, 0.35, 'triangle', 0.05, 1));
+  function boom() {
+    if (!save.sound) return;
+    const a = ac(); if (!a) return;
+    const t = a.currentTime, len = Math.floor(a.sampleRate * 0.5);
+    const buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+    src.buffer = buf;
+    f.type = 'lowpass';
+    f.frequency.setValueAtTime(1400, t); f.frequency.exponentialRampToValueAtTime(110, t + 0.45);
+    g.gain.value = 0.3;
+    src.connect(f).connect(g).connect(a.destination);
+    src.start(t);
+    note(-19, 0, 0.45, 'sine', 0.25, 2.4);
+  }
   const chime = () => [0, 4, 7, 12, 16, 19, 24].forEach((s, i) => note(s + 5, i * 0.08, 0.5, 'sine', 0.09, 1));
   const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
 
   // ---------- drawing ----------
   const px = x => ox + (x + 0.5) * cell;
   const py = y => oy + (rows - 1 - y + 0.5) * cell;
+  const rgba = (hex, a) => {
+    const n = parseInt(hex.slice(1), 16);
+    return `rgba(${n >> 16},${n >> 8 & 255},${n & 255},${a})`;
+  };
 
   function layout() {
     const r = wrap.getBoundingClientRect();
@@ -364,15 +832,112 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     cell = Math.min(W / cols, H / rows);
     ox = (W - cell * cols) / 2; oy = (H - cell * rows) / 2;
     bg.width = Math.round(innerWidth * dpr); bg.height = Math.round(innerHeight * dpr);
+    buildSprites();
+    const shown = document.querySelector('#scene .on');
+    if (shown && shown.sceneImg) paintScene(shown, shown.sceneImg);
+  }
+
+  // Bubbles are painted once per size into sprites (soft shadow, bold candy body, one gentle highlight), then stamped each frame.
+  function buildSprites() {
+    const R = cell * 0.46 * dpr;
+    SP = Math.max(4, Math.ceil(R * 2 * 1.3));
+    const C = SP / 2;
+    const canvas = () => { const c = document.createElement('canvas'); c.width = c.height = SP; return c; };
+    sprites = PAL.map(p => {
+      const c = canvas(), g = c.getContext('2d');
+      // Translucent like a real bubble: see-through middle, color gathering toward the rim.
+      let gr = g.createRadialGradient(C - R * 0.2, C - R * 0.25, R * 0.05, C, C, R);
+      gr.addColorStop(0, rgba(p.light, 0.5)); gr.addColorStop(0.5, rgba(p.light, 0.42)); gr.addColorStop(0.8, rgba(p.base, 0.72)); gr.addColorStop(1, rgba(p.base, 0.95));
+      g.fillStyle = gr;
+      g.beginPath(); g.arc(C, C, R, 0, Math.PI * 2); g.fill();
+      g.lineWidth = R * 0.06; g.strokeStyle = rgba(p.light, 0.75);
+      g.beginPath(); g.arc(C, C, R * 0.95, 0, Math.PI * 2); g.stroke();
+      // a faint reflected glint on the lower edge
+      g.lineWidth = R * 0.07; g.lineCap = 'round'; g.strokeStyle = 'rgba(255,255,255,.3)';
+      g.beginPath(); g.arc(C, C, R * 0.78, Math.PI * 0.15, Math.PI * 0.45); g.stroke();
+      g.drawImage(paintGloss(canvas(), C, R), 0, 0);
+      return c;
+    });
+    gloss = paintGloss(canvas(), C, R);
+  }
+  function paintGloss(c, C, R) {
+    const g = c.getContext('2d');
+    g.save();
+    g.translate(C - R * 0.32, C - R * 0.4); g.rotate(-0.55); g.scale(1, 0.6);
+    const gr = g.createRadialGradient(0, 0, 0, 0, 0, R * 0.32);
+    gr.addColorStop(0, 'rgba(255,255,255,.6)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr;
+    g.beginPath(); g.arc(0, 0, R * 0.32, 0, Math.PI * 2); g.fill();
+    g.restore();
+    return c;
+  }
+  function rainbowGradient(c, x, y, R, spin) {
+    let g;
+    if (c.createConicGradient) g = c.createConicGradient(spin, x, y);
+    else g = c.createLinearGradient(x - R, y - R, x + R, y + R);
+    RAINBOW_STOPS.forEach((col, i) => g.addColorStop(i / (RAINBOW_STOPS.length - 1), col));
+    return g;
+  }
+  function drawRainbow(R) {
+    ctx.globalAlpha = 0.72;
+    ctx.fillStyle = rainbowGradient(ctx, 0, 0, R, reduced ? 0 : now * 1.4);
+    ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+    const gr = ctx.createRadialGradient(0, 0, 0, 0, 0, R * 0.55);
+    gr.addColorStop(0, 'rgba(255,255,255,.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = gr;
+    ctx.beginPath(); ctx.arc(0, 0, R * 0.55, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = R * 0.08; ctx.strokeStyle = 'rgba(255,255,255,.7)';
+    ctx.beginPath(); ctx.arc(0, 0, R * 0.96, 0, Math.PI * 2); ctx.stroke();
+    ctx.drawImage(gloss, -SP / 2 / dpr, -SP / 2 / dpr, SP / dpr, SP / dpr);
+    if (!reduced) {
+      const a = now * 2.2;
+      star(Math.cos(a) * R * 1.12, Math.sin(a) * R * 1.12, R * 0.18, a, 'rgba(255,255,255,.75)');
+    }
+  }
+  function drawBomb(R) {
+    const gr = ctx.createRadialGradient(-R * 0.3, -R * 0.3, R * 0.1, 0, R * 0.05, R * 0.9);
+    gr.addColorStop(0, '#666d8c'); gr.addColorStop(0.6, '#2e3247'); gr.addColorStop(1, '#181a27');
+    ctx.fillStyle = gr;
+    ctx.beginPath(); ctx.arc(0, R * 0.06, R * 0.88, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = R * 0.08; ctx.strokeStyle = `rgba(255,130,60,${0.45 + 0.3 * Math.sin(now * 5)})`;
+    ctx.stroke();
+    ctx.fillStyle = '#8a90a8';
+    roundRect(ctx, -R * 0.22, -R * 0.98, R * 0.44, R * 0.22, R * 0.06); ctx.fill();
+    ctx.lineWidth = R * 0.09; ctx.lineCap = 'round'; ctx.strokeStyle = '#d9c7a3';
+    ctx.beginPath(); ctx.moveTo(0, -R * 0.92); ctx.quadraticCurveTo(R * 0.15, -R * 1.25, R * 0.45, -R * 1.15); ctx.stroke();
+    const flick = reduced ? 1 : 0.75 + Math.random() * 0.5;
+    star(R * 0.45, -R * 1.15, R * 0.3 * flick, now * 6, '#ffc23d');
+    star(R * 0.45, -R * 1.15, R * 0.15 * flick, -now * 4, '#ff6a00');
+    ctx.drawImage(gloss, -SP / 2 / dpr, -SP / 2 / dpr, SP / dpr, SP / dpr);
+  }
+  function star(x, y, s, rot, fill) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    for (let i = 0; i < 8; i++) {
+      const rr = i % 2 ? s * 0.28 : s, a = i * Math.PI / 4;
+      ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+    }
+    ctx.closePath(); ctx.fill(); ctx.restore();
   }
 
   function burst(b) {
-    const x = px(b.x), y = py(b.y), pal = PAL[b.color];
-    parts.push({ ring: true, x, y, r: cell * 0.42, life: 1, col: pal.light });
-    const n = reduced ? 4 : 9;
+    const x = px(b.x), y = py(b.y);
+    const col = b.color === RB ? '#ffffff' : b.color === BOMB ? '#ffa04a' : PAL[b.color].light;
+    parts.push({ kind: 'flash', x, y, r: cell * 0.6, life: 1, col });
+    parts.push({ kind: 'ring', x, y, r: cell * 0.4, life: 1, col });
+    const n = reduced ? 4 : 10;
     for (let i = 0; i < n; i++) {
-      const a = (i / n) * Math.PI * 2 + Math.random() * 0.5, sp = cell * (1.6 + Math.random() * 2.2);
-      parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: cell * (0.05 + Math.random() * 0.06), life: 1, col: pal.light, decay: 1.3 + Math.random() });
+      const a = (i / n) * Math.PI * 2 + Math.random() * 0.5, sp = cell * (1.8 + Math.random() * 2.6);
+      parts.push({ kind: 'drop', x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: cell * (0.05 + Math.random() * 0.07), life: 1, col: b.color === RB ? RAINBOW_STOPS[i % 5] : col, decay: 1.2 + Math.random() });
+    }
+    if (!reduced && (b.color === RB || Math.random() < 0.35)) sparkleBurst(x, y, 3);
+  }
+  function sparkleBurst(x, y, n) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, sp = cell * (1 + Math.random() * 2.5);
+      parts.push({ kind: 'spark', x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: cell * (0.12 + Math.random() * 0.12), life: 1, rot: Math.random() * 6, col: RAINBOW_STOPS[i % 5], decay: 1 + Math.random() * 0.6 });
     }
   }
 
@@ -383,28 +948,24 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
   }
 
   function drawBubble(b, dt) {
-    const pal = PAL[b.color], R = cell * 0.46;
+    const R = cell * 0.46;
     let s = b.scale;
     if (!reduced) s *= 1 + Math.sin(now * 1.7 + b.phase) * 0.022;
     let sx = s, sy = s;
     if (b.squash > 0) { sx *= 1 + 0.14 * b.squash; sy *= 1 - 0.14 * b.squash; b.squash = Math.max(0, b.squash - dt * 4); }
     if (b.wob > 0) { const w = Math.sin(b.wob * 22) * 0.1 * b.wob; sx *= 1 + w; sy *= 1 - w; b.wob = Math.max(0, b.wob - dt * 2.2); }
-    if (b.hint > now) { const h = 1 + Math.abs(Math.sin(now * 7)) * 0.1; sx *= h; sy *= h; }
-    if (b.popAt && !b.popped && chain) { const k = Math.max(0, 1 - (b.popAt - now) * 8); sx *= 1 + k * 0.15; sy *= 1 + k * 0.15; }
-    const x = px(b.x), y = py(b.y);
+    const hinted = b.hint > now;
+    if (hinted) { const h = 1 + Math.abs(Math.sin(now * 7)) * 0.1; sx *= h; sy *= h; }
+    if (b.popAt && !b.popped && chain) { const k = Math.max(0, 1 - (b.popAt - now) * 8); sx *= 1 + k * 0.18; sy *= 1 + k * 0.18; }
     ctx.save();
-    ctx.translate(x, y); ctx.scale(sx, sy);
-    if (b.hint > now) { ctx.shadowColor = pal.light; ctx.shadowBlur = cell * 0.5; }
-    const g = ctx.createRadialGradient(-R * 0.35, -R * 0.4, R * 0.08, 0, 0, R);
-    g.addColorStop(0, pal.light); g.addColorStop(0.45, pal.base); g.addColorStop(1, pal.dark);
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.lineWidth = R * 0.07; ctx.strokeStyle = 'rgba(255,255,255,.28)'; ctx.stroke();
-    ctx.fillStyle = 'rgba(255,255,255,.78)';
-    ctx.beginPath(); ctx.ellipse(-R * 0.33, -R * 0.4, R * 0.28, R * 0.16, -0.6, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,.35)';
-    ctx.beginPath(); ctx.arc(R * 0.38, R * 0.34, R * 0.09, 0, Math.PI * 2); ctx.fill();
+    ctx.translate(px(b.x), py(b.y)); ctx.scale(sx, sy);
+    if (hinted) {
+      ctx.fillStyle = `rgba(255,255,255,${0.25 + Math.abs(Math.sin(now * 7)) * 0.25})`;
+      ctx.beginPath(); ctx.arc(0, 0, R * 1.18, 0, Math.PI * 2); ctx.fill();
+    }
+    if (b.color === RB) drawRainbow(R);
+    else if (b.color === BOMB) drawBomb(R);
+    else ctx.drawImage(sprites[b.color], -SP / 2 / dpr, -SP / 2 / dpr, SP / dpr, SP / dpr);
     ctx.restore();
   }
 
@@ -419,17 +980,50 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     b.scale += (1 - b.scale) * Math.min(1, dt * 10);
   }
 
-  // Ambient bubbles drifting up behind the board.
-  const amb = Array.from({ length: 22 }, () => ({ x: Math.random(), y: Math.random(), r: 2 + Math.random() * 7, sp: 0.012 + Math.random() * 0.03, ph: Math.random() * 6 }));
+  // Underwater backdrop: sparkles twinkling in the water, drifting specks, rising bubbles.
+  const newSparkle = s => Object.assign(s, { x: Math.random(), y: Math.random(), size: 2.5 + Math.random() * 4.5, ph: Math.random() * 6.28, sp: 0.6 + Math.random() * 1.1, rot: Math.random() * 6 });
+  const sparkles = Array.from({ length: 38 }, () => newSparkle({}));
+  const specks = Array.from({ length: 34 }, () => ({ x: Math.random(), y: Math.random(), r: 0.6 + Math.random() * 1.4, sp: 0.004 + Math.random() * 0.01, ph: Math.random() * 6 }));
+  const amb = Array.from({ length: 20 }, () => ({ x: Math.random(), y: Math.random(), r: 2 + Math.random() * 7, sp: 0.012 + Math.random() * 0.03, ph: Math.random() * 6 }));
+  function bgStar(x, y, s, rot, alpha) {
+    bctx.save(); bctx.translate(x, y); bctx.rotate(rot);
+    bctx.fillStyle = `rgba(225,255,250,${alpha})`;
+    bctx.beginPath();
+    for (let i = 0; i < 8; i++) {
+      const rr = i % 2 ? s * 0.22 : s, a = i * Math.PI / 4;
+      bctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+    }
+    bctx.closePath(); bctx.fill(); bctx.restore();
+  }
   function drawBg(dt) {
     const w = bg.width, h = bg.height;
     bctx.clearRect(0, 0, w, h);
+    for (const s of sparkles) {
+      let a = 0.35;
+      if (!reduced) {
+        const prev = Math.sin(s.ph);
+        s.ph += s.sp * dt;
+        const v = Math.sin(s.ph);
+        if (prev < 0 && v >= 0) { newSparkle(s); s.ph = 0; } // twinkled out: fade in somewhere else
+        a = Math.pow(Math.max(0, v), 3) * 0.75;
+        s.y -= 0.003 * dt;
+      }
+      if (a < 0.02) continue;
+      bgStar(s.x * w, s.y * h, s.size * dpr * (0.6 + a * 0.5), s.rot, a);
+    }
+    for (const s of specks) {
+      if (!reduced) { s.y -= s.sp * dt; if (s.y < -0.02) { s.y = 1.02; s.x = Math.random(); } }
+      bctx.fillStyle = `rgba(200,255,245,${0.18 + 0.12 * Math.sin(now * 2 + s.ph)})`;
+      bctx.beginPath(); bctx.arc((s.x + Math.sin(now * 0.4 + s.ph) * 0.01) * w, s.y * h, s.r * dpr, 0, Math.PI * 2); bctx.fill();
+    }
     bctx.lineWidth = 1.2 * dpr;
     for (const a of amb) {
       if (!reduced) { a.y -= a.sp * dt; if (a.y < -0.05) { a.y = 1.05; a.x = Math.random(); } }
-      const x = (a.x + Math.sin(now * 0.6 + a.ph) * 0.01) * w, y = a.y * h;
-      bctx.strokeStyle = 'rgba(234,251,246,.13)';
-      bctx.beginPath(); bctx.arc(x, y, a.r * dpr, 0, Math.PI * 2); bctx.stroke();
+      const x = (a.x + Math.sin(now * 0.6 + a.ph) * 0.01) * w, y = a.y * h, r = a.r * dpr;
+      bctx.strokeStyle = 'rgba(234,251,246,.16)';
+      bctx.beginPath(); bctx.arc(x, y, r, 0, Math.PI * 2); bctx.stroke();
+      bctx.fillStyle = 'rgba(255,255,255,.22)';
+      bctx.beginPath(); bctx.arc(x - r * 0.35, y - r * 0.35, r * 0.25, 0, Math.PI * 2); bctx.fill();
     }
   }
 
@@ -438,11 +1032,18 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     last = t; now += dt;
     runChain();
     drawBg(dt);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = 'rgba(4,24,31,.32)';
+    let sx = 0, sy = 0;
+    if (shake > 0.2) { sx = (Math.random() - 0.5) * shake * 2; sy = (Math.random() - 0.5) * shake * 2; shake *= Math.exp(-dt * 7); } else shake = 0;
+    ctx.setTransform(dpr, 0, 0, dpr, sx * dpr, sy * dpr);
+    ctx.clearRect(-20, -20, W + 40, H + 40);
+
+    // glass panel behind the bubbles
+    const pg = ctx.createLinearGradient(0, oy, 0, oy + cell * rows);
+    pg.addColorStop(0, 'rgba(4,18,28,.32)'); pg.addColorStop(1, 'rgba(4,18,28,.5)');
+    ctx.fillStyle = pg;
     roundRect(ctx, ox - 6, oy - 6, cell * cols + 12, cell * rows + 12, cell * 0.5);
     ctx.fill();
+    ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,.1)'; ctx.stroke();
 
     for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) {
       const b = grid[c][r];
@@ -453,31 +1054,51 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
 
     for (let i = parts.length - 1; i >= 0; i--) {
       const p = parts[i];
-      if (p.ring) {
-        p.life -= dt * 3; p.r += cell * 1.6 * dt;
-        ctx.globalAlpha = Math.max(0, p.life) * 0.8;
-        ctx.strokeStyle = p.col; ctx.lineWidth = cell * 0.05;
+      if (p.kind === 'flash') {
+        ctx.globalCompositeOperation = 'lighter';
+        p.life -= dt * 5;
+        const a = Math.max(0, p.life);
+        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+        g.addColorStop(0, rgba(p.col, 0.35 * a)); g.addColorStop(1, rgba(p.col, 0));
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
+      } else if (p.kind === 'ring') {
+        p.life -= dt * 2.8; p.r += cell * 1.8 * dt;
+        ctx.globalAlpha = Math.max(0, p.life) * 0.9;
+        ctx.strokeStyle = p.col; ctx.lineWidth = cell * 0.06 * Math.max(0.2, p.life);
         ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.stroke();
       } else {
         p.life -= dt * p.decay;
         p.vx *= 1 - dt * 3; p.vy = p.vy * (1 - dt * 3) - cell * 2.2 * dt; // little bubbles float upward
         p.x += p.vx * dt; p.y += p.vy * dt;
         ctx.globalAlpha = Math.max(0, p.life);
-        ctx.fillStyle = p.col;
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+        if (p.kind === 'spark') { p.rot += dt * 4; star(p.x, p.y, p.r * (0.5 + p.life * 0.5), p.rot, p.col); }
+        else {
+          ctx.fillStyle = p.col;
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+        }
       }
       if (p.life <= 0) parts.splice(i, 1);
     }
+    ctx.globalCompositeOperation = 'source-over';
 
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     for (let i = floats.length - 1; i >= 0; i--) {
       const f = floats[i];
       f.life -= dt * 0.9; f.y -= cell * 0.9 * dt;
       ctx.globalAlpha = Math.max(0, Math.min(1, f.life * 1.6));
-      ctx.font = `800 ${Math.round(cell * 0.5 * f.size)}px ${getComputedStyle(document.documentElement).getPropertyValue('--display')}`;
-      ctx.lineWidth = cell * 0.08; ctx.strokeStyle = 'rgba(6,30,38,.6)';
+      const size = Math.round(cell * 0.5 * f.size);
+      ctx.font = `800 ${size}px ${DISPLAY}`;
+      ctx.lineWidth = cell * 0.1; ctx.strokeStyle = 'rgba(4,20,30,.65)';
       ctx.strokeText(f.text, f.x, f.y);
-      ctx.fillStyle = '#fff6da'; ctx.fillText(f.text, f.x, f.y);
+      if (f.rainbow) {
+        const wd = ctx.measureText(f.text).width;
+        const g = ctx.createLinearGradient(f.x - wd / 2, 0, f.x + wd / 2, 0);
+        RAINBOW_STOPS.forEach((col, k) => g.addColorStop(k / (RAINBOW_STOPS.length - 1), col));
+        ctx.fillStyle = g;
+      } else ctx.fillStyle = '#fff6da';
+      ctx.fillText(f.text, f.x, f.y);
       if (f.life <= 0) floats.splice(i, 1);
     }
     ctx.globalAlpha = 1;
@@ -493,9 +1114,17 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     const row = rows - 1 - Math.floor((e.clientY - r.top - oy) / cell);
     if (c >= 0 && c < cols && row >= 0 && row < rows) tap(c, row);
   });
+  $('lvlBtn').onclick = openLevels;
+  $('lvClose').onclick = () => { $('levels').hidden = true; };
+  $('levels').addEventListener('click', e => { if (e.target === $('levels')) $('levels').hidden = true; });
+  addEventListener('keydown', e => { if (e.key === 'Escape') $('levels').hidden = true; });
   $('undoBtn').onclick = undo;
   $('ovUndo').onclick = undo;
   $('hintBtn').onclick = hint;
+  $('rbBtn').onclick = () => setArmed(armed === 'rainbow' ? null : 'rainbow');
+  $('bmBtn').onclick = () => setArmed(armed === 'bomb' ? null : 'bomb');
+  $('ovRainbow').onclick = () => { $('overlay').hidden = true; ended = false; setArmed('rainbow'); };
+  $('ovBomb').onclick = () => { $('overlay').hidden = true; ended = false; setArmed('bomb'); };
   $('restartBtn').onclick = () => { if (!busy) startLevel(level); };
   $('againBtn').onclick = () => startLevel(level);
   $('nextBtn').onclick = () => startLevel(level + 1);
@@ -510,8 +1139,11 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
       ({ nColors, cols, rows } = cfg(d.level));
       level = d.level; score = d.score; undoStack = d.undoStack || [];
       grid = fromColors(d.g);
+      showWorld(level);
       layout(); hud();
     } else startLevel(save.level || 1);
+    persist();
+    if (firstGift) tip('A gift for your stash! Pop 8+ at once to earn bombs, 12+ to earn rainbows.');
     requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
   };
   window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? {});
