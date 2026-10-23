@@ -39,6 +39,12 @@ body{
   -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
 }
 #bg{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+/* World backdrops: two layers crossfade; a tint keeps bubbles and header text readable. */
+.scene{position:fixed;inset:0;pointer-events:none;--tint:.3}
+.scene div{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.4s ease}
+.scene div.on{opacity:1}
+.scene::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,16,26,calc(var(--tint) + .3)) 0%,rgba(4,16,26,var(--tint)) 20%,rgba(4,16,26,var(--tint)) 80%,rgba(4,16,26,calc(var(--tint) + .25)) 100%)}
+@media (prefers-reduced-motion:reduce){.scene div{transition:none}}
 .app{
   position:relative;height:100%;box-sizing:border-box;
   display:flex;flex-direction:column;gap:10px;
@@ -136,6 +142,7 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
 </head>
 <body>
 
+<div class="scene" id="scene" aria-hidden="true"><div></div><div></div></div>
 <canvas id="bg" aria-hidden="true"></canvas>
 <div class="app">
   <header class="top">
@@ -390,6 +397,7 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     score = 0; undoStack = []; ended = false; busy = false; armed = null; chain = null; parts = []; floats = [];
     save.level = l; persist();
     $('overlay').hidden = true;
+    showWorld(l);
     layout(); hud();
   }
 
@@ -567,6 +575,39 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     $('overlay').hidden = true;
     swish(); tip(null); hud();
   }
+  // Each world of 10 levels has its own backdrop (made in Canva); past level 100 they repeat.
+  // tint darkens brighter or busier images so the bubbles stay easy to see.
+  const WORLDS = [
+    { name: 'Bubble Bath', tint: 0.35 },
+    { name: 'Candlelit Bath', tint: 0.15 },
+    { name: 'The Fishbowl', tint: 0.45 },
+    { name: 'Fishbowl by Moonlight', tint: 0.12 },
+    { name: 'Koi Pond', tint: 0.22 },
+    { name: 'Lantern Pond', tint: 0.1 },
+    { name: 'Caribbean Reef', tint: 0.32 },
+    { name: 'Coral Sunset', tint: 0.15 },
+    { name: "Mermaid's Castle", tint: 0.32 },
+    { name: 'Castle by Moonlight', tint: 0.1 },
+  ].map((w, i) => ({ ...w, file: `backgrounds/world${String(i + 1).padStart(2, '0')}.jpg` }));
+  let worldShown = -1, sceneLayer = 0;
+  function showWorld(l) {
+    const w = Math.floor((l - 1) / 10) % WORLDS.length;
+    if ((l - 1) % 10 === 0) tip(`Welcome to world ${w + 1}: ${WORLDS[w].name}!`);
+    if (w === worldShown) return;
+    worldShown = w;
+    const img = new Image();
+    img.onload = () => {
+      if (worldShown !== w) return;
+      const layers = $('scene').children, next = layers[sceneLayer ^ 1];
+      next.style.backgroundImage = `url("${WORLDS[w].file}")`;
+      $('scene').style.setProperty('--tint', WORLDS[w].tint);
+      next.classList.add('on'); layers[sceneLayer].classList.remove('on');
+      sceneLayer ^= 1;
+      new Image().src = WORLDS[(w + 1) % WORLDS.length].file; // warm the cache for the next world
+    };
+    img.src = WORLDS[w].file;
+  }
+
   // Hints come from a real winning path: a remembered one if the board is on it, else a fresh search.
   let hintMap = new Map();
   function recordPath(s, path) {
@@ -927,7 +968,7 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
 
     // glass panel behind the bubbles
     const pg = ctx.createLinearGradient(0, oy, 0, oy + cell * rows);
-    pg.addColorStop(0, 'rgba(255,255,255,.07)'); pg.addColorStop(1, 'rgba(0,12,22,.3)');
+    pg.addColorStop(0, 'rgba(4,18,28,.32)'); pg.addColorStop(1, 'rgba(4,18,28,.5)');
     ctx.fillStyle = pg;
     roundRect(ctx, ox - 6, oy - 6, cell * cols + 12, cell * rows + 12, cell * 0.5);
     ctx.fill();
@@ -1023,6 +1064,7 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
       ({ nColors, cols, rows } = cfg(d.level));
       level = d.level; score = d.score; undoStack = d.undoStack || [];
       grid = fromColors(d.g);
+      showWorld(level);
       layout(); hud();
     } else startLevel(save.level || 1);
     persist();
