@@ -44,6 +44,7 @@
   color-scheme:dark;
 }
 html,body{height:100%}
+[hidden]{display:none!important}
 body{
   background:var(--abyss);
   background-image:radial-gradient(140% 80% at 50% -10%,var(--shallow) 0%,var(--lagoon) 30%,var(--deep) 62%,var(--abyss) 100%);
@@ -56,8 +57,20 @@ body{
 .scene{position:fixed;inset:0;pointer-events:none;--tint:.3}
 .scene canvas{position:absolute;inset:0;width:100%;height:100%;opacity:0;transition:opacity 1.4s ease}
 .scene canvas.on{opacity:1}
-.scene::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,16,26,calc(var(--tint) + .3)) 0%,rgba(4,16,26,var(--tint)) 20%,rgba(4,16,26,var(--tint)) 80%,rgba(4,16,26,calc(var(--tint) + .25)) 100%)}
+.scene::after{content:"";position:absolute;inset:0;transition:opacity 1s ease;background:linear-gradient(180deg,rgba(4,16,26,calc(var(--tint) + .3)) 0%,rgba(4,16,26,var(--tint)) 20%,rgba(4,16,26,var(--tint)) 80%,rgba(4,16,26,calc(var(--tint) + .25)) 100%)}
 @media (prefers-reduced-motion:reduce){.scene canvas{transition:none}}
+/* Art moments: a world's intro and a cleared board lift the tint and fade the chrome back. */
+body.revealing .scene::after{opacity:0}
+.app > :not(.board){transition:opacity .8s ease}
+body.revealing .app > :not(.board){opacity:.15}
+.intro{position:fixed;inset:0;z-index:3;display:grid;place-items:center;padding-bottom:6vh;cursor:pointer;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.intro-card{text-align:center;animation:rise .7s cubic-bezier(.2,1.3,.4,1) both;transition:opacity .4s ease}
+.intro.out .intro-card{opacity:0}
+.intro-card .label{display:block;margin-bottom:4px;color:var(--foam);text-shadow:0 1px 8px rgba(0,0,0,.6)}
+.intro-card h2{margin:0;font:800 clamp(2.2rem,10vw,3.2rem)/1.05 var(--display);color:var(--foam);text-wrap:balance;
+  text-shadow:0 2px 18px rgba(0,10,20,.7),0 1px 3px rgba(0,10,20,.6)}
+.intro-card p{margin:10px 0 0;font-size:.85rem;color:var(--mist);text-shadow:0 1px 6px rgba(0,0,0,.6)}
 .app{
   position:relative;height:100%;box-sizing:border-box;
   display:flex;flex-direction:column;gap:10px;
@@ -214,6 +227,8 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     <button id="ovUndo" class="linkish" type="button">Undo last pop</button>
   </div>
 </div>
+
+<div class="intro" id="intro" hidden><div class="intro-card"><span class="label" id="introWorld">World 1</span><h2 id="introName">Bubble Bath</h2><p>Tap to start</p></div></div>
 
 <div class="overlay" id="levels" hidden>
   <div class="card levels-card" role="dialog" aria-labelledby="lvTitle">
@@ -438,6 +453,9 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     save.level = l; save.maxLevel = Math.max(save.maxLevel || 1, l); persist();
     $('overlay').hidden = true;
     showWorld(l);
+    const worldNo = Math.floor((l - 1) / 10);
+    if (save.lastWorld !== worldNo) { save.lastWorld = worldNo; persist(); playIntro(worldNo); }
+    else { endIntro(); setReveal(false); }
     layout(); hud();
   }
 
@@ -516,6 +534,7 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
   };
 
   function tap(c, r) {
+    if (introOn) { endIntro(); return; }
     if (busy || ended) return;
     const b = grid[c] && grid[c][r];
     if (!b) return;
@@ -599,7 +618,8 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
         const left = remaining();
         if (left === 0) { score += 1000; floats.push({ x: W / 2, y: H / 2, text: '+1000', life: 1.4, size: 1.6, rainbow: true }); }
         hud();
-        setTimeout(() => showEnd(left), left === 0 ? 1100 : 750);
+        if (left === 0) setReveal(true); // the cleared lagoon shows off its scene before the pearls
+        setTimeout(() => showEnd(left), left === 0 ? 2600 : 750);
         if (left === 0) setTimeout(chime, 250);
       } else hud();
     }
@@ -609,6 +629,7 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     if (busy || !undoStack.length) return;
     const s = undoStack.pop();
     grid = fromColors(s.g); score = s.score; ended = false; armed = null;
+    setReveal(false);
     if (typeof s.rainbows === 'number') save.rainbows = s.rainbows;
     if (typeof s.bombs === 'number') save.bombs = s.bombs;
     persist();
@@ -632,7 +653,6 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
   let worldShown = -1, sceneLayer = 0;
   function showWorld(l) {
     const w = Math.floor((l - 1) / 10) % WORLDS.length;
-    if ((l - 1) % 10 === 0) tip(`Welcome to world ${w + 1}: ${WORLDS[w].name}!`);
     if (w === worldShown) return;
     worldShown = w;
     worldImage(w).then(img => {
@@ -671,6 +691,28 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
       ? Promise.resolve().then(() => decode(bytes()))
       : fetch(file).then(r => r.ok ? r.blob() : Promise.reject(new Error(r.status))).then(decode).catch(() => viaImg(file));
     return worldSrc[w] = worldSrc[w] || load.catch(err => { delete worldSrc[w]; throw err; });
+  }
+
+  // Art moments: entering a new world shows its artwork with a title card before the bubbles drop in.
+  let introOn = false, introTimer = 0, reveal = false, panelA = 1;
+  function setReveal(on) { reveal = on; document.body.classList.toggle('revealing', on); }
+  function playIntro(n) {
+    $('introWorld').textContent = `World ${n + 1}`;
+    $('introName').textContent = WORLDS[n % WORLDS.length].name;
+    $('intro').classList.remove('out');
+    $('intro').hidden = false;
+    introOn = true;
+    setReveal(true);
+    clearTimeout(introTimer);
+    introTimer = setTimeout(endIntro, 2600);
+  }
+  function endIntro() {
+    if (!introOn) return;
+    introOn = false;
+    clearTimeout(introTimer);
+    setReveal(false);
+    $('intro').classList.add('out');
+    setTimeout(() => { if (!introOn) $('intro').hidden = true; }, 400);
   }
 
   // Level picker: every level is open; each shows the pearls earned on it.
@@ -1065,17 +1107,20 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     ctx.setTransform(dpr, 0, 0, dpr, sx * dpr, sy * dpr);
     ctx.clearRect(-20, -20, W + 40, H + 40);
 
-    // glass panel behind the bubbles
+    // glass panel behind the bubbles (fades out while the artwork is being shown off)
+    panelA += ((reveal ? 0 : 1) - panelA) * Math.min(1, dt * 3);
+    ctx.globalAlpha = panelA;
     const pg = ctx.createLinearGradient(0, oy, 0, oy + cell * rows);
     pg.addColorStop(0, 'rgba(4,18,28,.14)'); pg.addColorStop(1, 'rgba(4,18,28,.26)');
     ctx.fillStyle = pg;
     roundRect(ctx, ox - 6, oy - 6, cell * cols + 12, cell * rows + 12, cell * 0.5);
     ctx.fill();
     ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,.1)'; ctx.stroke();
+    ctx.globalAlpha = 1;
 
     for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) {
       const b = grid[c][r];
-      if (!b || b.popped) continue;
+      if (!b || b.popped || introOn) continue;
       update(b, c, r, dt);
       drawBubble(b, dt);
     }
@@ -1143,6 +1188,7 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     if (c >= 0 && c < cols && row >= 0 && row < rows) tap(c, row);
   });
   $('lvlBtn').onclick = openLevels;
+  $('intro').onclick = endIntro;
   $('lvClose').onclick = () => { $('levels').hidden = true; };
   $('levels').addEventListener('click', e => { if (e.target === $('levels')) $('levels').hidden = true; });
   addEventListener('keydown', e => { if (e.key === 'Escape') $('levels').hidden = true; });
