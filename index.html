@@ -7,6 +7,19 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#05141f">
+<meta name="apple-mobile-web-app-title" content="Bubble Lagoon">
+<meta name="description" content="A relaxing bubble-popping puzzle: pop matching bubbles, earn bombs and rainbows, and explore 10 underwater worlds.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Bubble Lagoon">
+<meta property="og:description" content="A relaxing bubble-popping puzzle: pop matching bubbles, earn bombs and rainbows, and explore 10 underwater worlds.">
+<meta property="og:url" content="https://mareearee.github.io/Game1/">
+<meta property="og:image" content="https://mareearee.github.io/Game1/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}body{margin:0}[hidden]{display:none!important}</style>
 <title>Bubble Lagoon</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -1162,5 +1175,10 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
 })();
 </script>
 
+<script>
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
 </body>
 </html>

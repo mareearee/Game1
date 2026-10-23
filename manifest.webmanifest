@@ -1,0 +1,16 @@
+{
+  "name": "Bubble Lagoon",
+  "short_name": "Bubble Lagoon",
+  "description": "A relaxing bubble-popping puzzle: pop matching bubbles, earn bombs and rainbows, and explore 10 underwater worlds.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#05141f",
+  "theme_color": "#05141f",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

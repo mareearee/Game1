@@ -4,12 +4,20 @@ A relaxing bubble-popping puzzle for your phone. Tap a group of 2 or more matchi
 
 Pop 8 to 11 at once (a Splash) to earn a bomb bubble, and 12 or more (a Tidal wave) to earn a rainbow bubble. Save them, then use them whenever you like: turn any bubble into a bomb (tap it to blast the 3×3 around it) or a rainbow (it matches every color; tap it to pop it with every group touching it).
 
-- `index.html` is the complete game: one file, no install, no app store.
-- `game.html` is the same game without the page wrapper (used for the claude.ai artifact).
+- `game.html` is the source of the game. `node tools/build.js` turns it into `index.html` (the web app) and an artifact copy (see Building).
+- `backgrounds/`, `icons/`, `manifest.webmanifest`, `sw.js` and `og-image.jpg` are the web app's artwork, install and offline files.
 
-## Play on your phone
+## Play
 
-Turn on GitHub Pages (Settings → Pages → Deploy from branch → pick this branch, `/ (root)`), then open the site link in Safari or Chrome and tap **Share → Add to Home Screen**.
+**https://mareearee.github.io/Game1/** (once GitHub Pages is on; see below). It runs in any browser, on phones and laptops, with no account or app store.
+
+- **Install it like an app:** on iPhone, open the link in Safari and tap **Share → Add to Home Screen**. On Android, Chrome offers **Install app** (or use the ⋮ menu → **Add to Home screen**). It opens full screen with its own icon.
+- **Offline:** after the first visit, it keeps working without internet.
+- **Sharing:** the link shows a preview card with the title and artwork when you text or post it.
+
+### Turning on GitHub Pages
+
+Settings → Pages → **Deploy from a branch** → `main`, `/ (root)` → Save. The site goes live a minute or two later and updates whenever `main` changes.
 
 ## Fair levels
 
@@ -36,4 +44,4 @@ Every 10 levels is a new world with its own backdrop, made with Canva and stored
 
 ## Building
 
-`game.html` is the source. Run `node tools/build.js <dir>` after changing it: it rewrites `index.html` (the GitHub Pages page, which loads `backgrounds/*.jpg`) and writes `<dir>/bubble-lagoon-artifact.html`, a copy with every background inlined so it works inside the claude.ai artifact viewer.
+`game.html` is the source. Run `node tools/build.js <dir>` after changing it: it rewrites `index.html` (the installable GitHub Pages app, which loads `backgrounds/*.jpg`) and its offline service worker `sw.js`, and writes `<dir>/bubble-lagoon-artifact.html`, a copy with every background inlined so it works inside the claude.ai artifact viewer.
