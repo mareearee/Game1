@@ -10,3 +10,9 @@ Pop 8 to 11 at once (a Splash) to earn a bomb bubble, and 12 or more (a Tidal wa
 ## Play on your phone
 
 Turn on GitHub Pages (Settings → Pages → Deploy from branch → pick this branch, `/ (root)`), then open the site link in Safari or Chrome and tap **Share → Add to Home Screen**.
+
+## Fair levels
+
+Every board for levels 1–100 is pre-checked by `tools/vet-levels.js`: each one can be fully cleared with plain matches (no bombs or rainbows needed), and how often random tapping clears it eases down from about 35% at level 1 to about 3%. Levels past 100 run the same check while they load. If you change the board generator, re-run `node tools/vet-levels.js` to refresh the table in `game.html`, then rebuild `index.html`.
+
+The Hint button shows a move from a real winning path, and tells you when a full clear is no longer possible from where you are.
