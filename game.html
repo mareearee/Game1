@@ -208,6 +208,8 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
   let W = 0, H = 0, cell = 40, ox = 0, oy = 0, dpr = 1;
   let sprites = [], gloss = null, SP = 0;
 
+  // ===== shared board logic (also run by the level-vetting script; keep it pure) =====
+  // A compact board is an array of non-empty columns, each listing colors bottom-up.
   function rng(seed) {
     return () => {
       seed = seed + 0x6D2B79F5 | 0;
@@ -222,8 +224,136 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     const nColors = l <= 6 ? 3 : l <= 14 ? 4 : 5;
     const firstOfTier = nColors === 3 ? 1 : nColors === 4 ? 7 : 15;
     const c = l <= 4 ? 6 : l <= 10 ? 7 : 8;
-    return { nColors, cols: c, rows: c + 2, clump: Math.max(0.12, 0.5 - 0.06 * (l - firstOfTier)) };
+    return { nColors, cols: c, rows: c + 2, clump: Math.max(0.3, 0.5 - 0.04 * (l - firstOfTier)) };
   }
+  function boardFor(l, v) {
+    const conf = cfg(l), R = rng(l * 7919 + 13 + v * 104729), s = [];
+    for (let c = 0; c < conf.cols; c++) {
+      s[c] = [];
+      for (let r = 0; r < conf.rows; r++) {
+        const near = [];
+        if (r > 0) near.push(s[c][r - 1]);
+        if (c > 0) near.push(s[c - 1][r]);
+        s[c][r] = near.length && R() < conf.clump ? near[Math.floor(R() * near.length)] : Math.floor(R() * conf.nColors);
+      }
+    }
+    return s;
+  }
+  // The cells a tap at (c, r) pops, following the same rules as the live game.
+  function sCells(s, c, r) {
+    const at = (x, y) => x >= 0 && x < s.length && y >= 0 && y < s[x].length ? s[x][y] : -1;
+    const seen = new Set(), out = [];
+    const take = (x, y) => { seen.add(x * 100 + y); out.push([x, y]); };
+    const flood = (x0, y0, color) => {
+      if (seen.has(x0 * 100 + y0)) return;
+      const start = out.length;
+      take(x0, y0);
+      for (let i = start; i < out.length; i++) {
+        const [x, y] = out[i];
+        for (const [dx, dy] of DIRS) {
+          const nx = x + dx, ny = y + dy, w = at(nx, ny);
+          if (w < 0 || seen.has(nx * 100 + ny) || (w !== color && w !== RB)) continue;
+          take(nx, ny);
+        }
+      }
+    };
+    const v = s[c][r];
+    if (v === BOMB) {
+      take(c, r);
+      for (let i = 0; i < out.length; i++) {
+        const [x, y] = out[i];
+        if (s[x][y] !== BOMB) continue;
+        for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++)
+          if (at(x + dx, y + dy) >= 0 && !seen.has((x + dx) * 100 + y + dy)) take(x + dx, y + dy);
+      }
+    } else if (v === RB) {
+      take(c, r);
+      for (const [dx, dy] of DIRS) { const w = at(c + dx, r + dy); if (w >= 0 && w !== BOMB) flood(c + dx, r + dy, w); }
+    } else flood(c, r, v);
+    return out;
+  }
+  function sMoves(s) {
+    const covered = new Set(), moves = [];
+    for (let c = 0; c < s.length; c++) for (let r = 0; r < s[c].length; r++) {
+      const v = s[c][r];
+      if (v === RB || v === BOMB) { moves.push({ c, r, cells: sCells(s, c, r) }); continue; }
+      if (covered.has(c * 100 + r)) continue;
+      const cells = sCells(s, c, r);
+      for (const [x, y] of cells) if (s[x][y] === v) covered.add(x * 100 + y);
+      if (cells.length > 1) moves.push({ c, r, cells });
+    }
+    return moves;
+  }
+  function sApply(s, cells) {
+    const gone = new Set(cells.map(([x, y]) => x * 100 + y)), out = [];
+    s.forEach((col, c) => { const k = col.filter((_, r) => !gone.has(c * 100 + r)); if (k.length) out.push(k); });
+    return out;
+  }
+  const sKey = s => s.map(col => col.join('')).join('|');
+  const sCount = s => s.reduce((n, col) => n + col.length, 0);
+  function playout(s, rand) {
+    const path = [];
+    for (;;) {
+      const ms = sMoves(s);
+      if (!ms.length) return { left: sCount(s), path };
+      const m = ms[Math.floor(rand() * ms.length)];
+      path.push(m); s = sApply(s, m.cells);
+    }
+  }
+  // How often tapping random valid groups clears the board. Any clear also proves it's solvable.
+  function clearRate(s, n, rand) {
+    let clears = 0, solution = null;
+    for (let i = 0; i < n; i++) {
+      const p = playout(s, rand);
+      if (!p.left) { clears++; solution = solution || p.path; }
+    }
+    return { rate: clears / n, solution };
+  }
+  // Depth-first search for a full clear, within a time budget.
+  function solve(s, ms) {
+    const t0 = performance.now(), seen = new Set();
+    let timedOut = false, bestLeft = Infinity, best = null;
+    function dfs(s, left, first) {
+      if (left === 0) return [];
+      if (performance.now() - t0 > ms) { timedOut = true; return null; }
+      const k = sKey(s);
+      if (seen.has(k)) return null;
+      seen.add(k);
+      const counts = {};
+      let special = false;
+      for (const col of s) for (const v of col) { if (v === RB || v === BOMB) special = true; counts[v] = (counts[v] || 0) + 1; }
+      const stuck = !special && Object.values(counts).some(n => n === 1);
+      const moves = stuck ? [] : sMoves(s);
+      if (!moves.length) { if (left < bestLeft) { bestLeft = left; best = first; } return null; }
+      moves.sort((a, b) => a.cells.length - b.cells.length);
+      for (const m of moves) {
+        const rest = dfs(sApply(s, m.cells), left - m.cells.length, first || m);
+        if (rest) return [m, ...rest];
+        if (timedOut) return null;
+      }
+      return null;
+    }
+    const path = dfs(s, sCount(s), null);
+    return { path, proven: !path && !timedOut, best };
+  }
+  // Levels 1–100 use board variants pre-checked by tools/vet-levels.js: each one is clearable,
+  // and how often random play clears it eases down from about 35% at level 1 to about 3%.
+  const VARIANTS = [];
+  const targetRate = l => Math.max(0.03, 0.35 * Math.pow(0.88, l - 1));
+  function pickVariant(l, plays, maxMs = Infinity) {
+    const t0 = performance.now();
+    let best = 0, bestRate = -1;
+    for (let v = 0; v < 400; v++) {
+      if (performance.now() - t0 > maxMs && bestRate >= 0 && bestRate < 10) return best;
+      const { rate } = clearRate(boardFor(l, v), plays, rng(l * 31 + v * 7));
+      if (rate >= targetRate(l) && rate <= targetRate(l) * 2) return v;
+      const gap = rate >= targetRate(l) ? rate - targetRate(l) : 10 + targetRate(l) - rate;
+      if (bestRate < 0 || gap < bestRate) { best = v; bestRate = gap; }
+      if (v >= 40 && bestRate < 10) return best; // close enough: clearable and at least as findable as the target
+    }
+    return best;
+  }
+  // ===== end shared board logic =====
   function mk(color, c, r, fromTop) {
     return {
       id: nextId++, color, x: c,
@@ -237,20 +367,14 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
 
   function startLevel(l) {
     level = l;
-    const conf = cfg(l);
-    ({ nColors, cols, rows } = conf);
-    const R = rng(l * 7919 + 13);
-    grid = [];
-    for (let c = 0; c < cols; c++) {
-      grid[c] = [];
-      for (let r = 0; r < rows; r++) {
-        const near = [];
-        if (r > 0) near.push(grid[c][r - 1].color);
-        if (c > 0) near.push(grid[c - 1][r].color);
-        const color = near.length && R() < conf.clump ? near[Math.floor(R() * near.length)] : Math.floor(R() * nColors);
-        grid[c][r] = mk(color, c, r, true);
-      }
-    }
+    ({ nColors, cols, rows } = cfg(l));
+    const v = VARIANTS[l - 1] ?? pickVariant(l, 300, 2500);
+    const board = boardFor(l, v);
+    grid = board.map((col, c) => col.map((k, r) => mk(k, c, r, true)));
+    // Remember one winning path so the first hints are instant.
+    hintMap = new Map();
+    const { solution } = clearRate(board, 3000, rng(l * 31 + v * 7));
+    if (solution) recordPath(board, solution);
     score = 0; undoStack = []; ended = false; busy = false; armed = null; chain = null; parts = []; floats = [];
     save.level = l; persist();
     $('overlay').hidden = true;
@@ -431,15 +555,31 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     $('overlay').hidden = true;
     swish(); tip(null); hud();
   }
+  // Hints come from a real winning path: a remembered one if the board is on it, else a fresh search.
+  let hintMap = new Map();
+  function recordPath(s, path) {
+    for (const m of path) { hintMap.set(sKey(s), m); s = sApply(s, m.cells); }
+  }
+  function compactBoard() {
+    const used = [];
+    grid.forEach((col, c) => { if (col[0]) used.push(c); });
+    return { used, s: used.map(c => grid[c].filter(Boolean).map(b => b.color)) };
+  }
   function hint() {
     if (busy || ended) return;
-    let best = null;
-    for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) {
-      if (!grid[c][r] || isSpecial(grid[c][r])) continue;
-      const g = findGroup(c, r);
-      if (g.length > 1 && (!best || g.length > best.length)) best = g;
+    const { used, s } = compactBoard();
+    let move = hintMap.get(sKey(s));
+    if (!move) {
+      const res = solve(s, 800);
+      if (res.path) { recordPath(s, res.path); move = res.path[0]; }
+      else {
+        move = res.best;
+        if (res.proven) tip(save.rainbows + save.bombs > 0
+          ? 'No full clear from here. Undo a few pops, or use a bomb or rainbow.'
+          : 'No full clear from here. Undo a few pops to find another way.');
+      }
     }
-    if (best) for (const [x, y] of best) grid[x][y].hint = now + 1.6;
+    if (move) for (const [x, y] of move.cells) grid[used[x]][y].hint = now + 1.6;
   }
 
   function showEnd(left) {
