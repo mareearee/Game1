@@ -45,3 +45,7 @@ Every 10 levels is a new world with its own backdrop, made with Canva and stored
 ## Building
 
 `game.html` is the source. Run `node tools/build.js <dir>` after changing it: it rewrites `index.html` (the installable GitHub Pages app, which loads `backgrounds/*.jpg`) and its offline service worker `sw.js`, and writes `<dir>/bubble-lagoon-artifact.html`, a copy with every background inlined so it works inside the claude.ai artifact viewer.
+
+## itch.io
+
+`node tools/build.js && node tools/itch.js <dir>` writes `<dir>/bubble-lagoon-itch.zip`, ready to upload as an HTML game (index.html at the root; the offline service worker is left out because itch.io plays games in its own frame). Suggested itch.io settings: Kind of project **HTML**, "This file will be played in the browser", viewport **420 × 800**, fullscreen button on, mobile friendly (portrait). Re-run it and upload the new zip after each update.
