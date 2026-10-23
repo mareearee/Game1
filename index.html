@@ -595,17 +595,27 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
     if ((l - 1) % 10 === 0) tip(`Welcome to world ${w + 1}: ${WORLDS[w].name}!`);
     if (w === worldShown) return;
     worldShown = w;
-    const img = new Image();
-    img.onload = () => {
+    worldImage(w).then(src => {
       if (worldShown !== w) return;
       const layers = $('scene').children, next = layers[sceneLayer ^ 1];
-      next.style.backgroundImage = `url("${WORLDS[w].file}")`;
+      next.style.backgroundImage = `url("${src}")`;
       $('scene').style.setProperty('--tint', WORLDS[w].tint);
       next.classList.add('on'); layers[sceneLayer].classList.remove('on');
       sceneLayer ^= 1;
-      new Image().src = WORLDS[(w + 1) % WORLDS.length].file; // warm the cache for the next world
-    };
-    img.src = WORLDS[w].file;
+      worldImage((w + 1) % WORLDS.length); // warm up the next world
+    }, () => {});
+  }
+  // Some hosts (like the artifact viewer) only serve the page's own files to fetch(), so load the
+  // image that way and hand CSS a blob URL; fall back to the plain path where fetch can't reach it.
+  const worldSrc = {};
+  function worldImage(w) {
+    const file = WORLDS[w].file;
+    const decoded = src => new Promise((ok, fail) => { const i = new Image(); i.onload = () => ok(src); i.onerror = fail; i.src = src; });
+    return worldSrc[w] = worldSrc[w] || fetch(file)
+      .then(r => r.ok ? r.blob() : Promise.reject(new Error(r.status)))
+      .then(b => decoded(URL.createObjectURL(b)))
+      .catch(() => decoded(file))
+      .catch(err => { delete worldSrc[w]; throw err; });
   }
 
   // Hints come from a real winning path: a remembered one if the board is on it, else a fresh search.
