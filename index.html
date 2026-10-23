@@ -618,16 +618,16 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
   // Each world of 10 levels has its own backdrop (made in Canva); past level 100 they repeat.
   // tint darkens brighter or busier images so the bubbles stay easy to see.
   const WORLDS = [
-    { name: 'Bubble Bath', tint: 0.35 },
-    { name: 'Candlelit Bath', tint: 0.15 },
-    { name: 'The Fishbowl', tint: 0.45 },
-    { name: 'Fishbowl by Moonlight', tint: 0.12 },
-    { name: 'Koi Pond', tint: 0.22 },
-    { name: 'Lantern Pond', tint: 0.1 },
-    { name: 'Caribbean Reef', tint: 0.32 },
-    { name: 'Coral Sunset', tint: 0.15 },
-    { name: "Mermaid's Castle", tint: 0.32 },
-    { name: 'Castle by Moonlight', tint: 0.1 },
+    { name: 'Bubble Bath', tint: 0.22 },
+    { name: 'Candlelit Bath', tint: 0.06 },
+    { name: 'The Fishbowl', tint: 0.32 },
+    { name: 'Fishbowl by Moonlight', tint: 0.04 },
+    { name: 'Koi Pond', tint: 0.12 },
+    { name: 'Lantern Pond', tint: 0.03 },
+    { name: 'Caribbean Reef', tint: 0.2 },
+    { name: 'Coral Sunset', tint: 0.06 },
+    { name: "Mermaid's Castle", tint: 0.2 },
+    { name: 'Castle by Moonlight', tint: 0.03 },
   ].map((w, i) => ({ ...w, file: `backgrounds/world${String(i + 1).padStart(2, '0')}.jpg` }));
   let worldShown = -1, sceneLayer = 0;
   function showWorld(l) {
@@ -872,11 +872,14 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
       const c = canvas(), g = c.getContext('2d');
       // Translucent like a real bubble: see-through middle, color gathering toward the rim.
       let gr = g.createRadialGradient(C - R * 0.2, C - R * 0.25, R * 0.05, C, C, R);
-      gr.addColorStop(0, rgba(p.light, 0.5)); gr.addColorStop(0.5, rgba(p.light, 0.42)); gr.addColorStop(0.8, rgba(p.base, 0.72)); gr.addColorStop(1, rgba(p.base, 0.95));
+      gr.addColorStop(0, rgba(p.light, 0.28)); gr.addColorStop(0.5, rgba(p.light, 0.24)); gr.addColorStop(0.78, rgba(p.base, 0.6)); gr.addColorStop(1, rgba(p.base, 0.95));
       g.fillStyle = gr;
       g.beginPath(); g.arc(C, C, R, 0, Math.PI * 2); g.fill();
-      g.lineWidth = R * 0.06; g.strokeStyle = rgba(p.light, 0.75);
-      g.beginPath(); g.arc(C, C, R * 0.95, 0, Math.PI * 2); g.stroke();
+      // a faint dark edge keeps bubbles crisp over bright backdrops, and a bright rim carries the color
+      g.lineWidth = R * 0.05; g.strokeStyle = 'rgba(0,12,24,.35)';
+      g.beginPath(); g.arc(C, C, R * 0.99, 0, Math.PI * 2); g.stroke();
+      g.lineWidth = R * 0.08; g.strokeStyle = rgba(p.light, 0.85);
+      g.beginPath(); g.arc(C, C, R * 0.93, 0, Math.PI * 2); g.stroke();
       // a faint reflected glint on the lower edge
       g.lineWidth = R * 0.07; g.lineCap = 'round'; g.strokeStyle = 'rgba(255,255,255,.3)';
       g.beginPath(); g.arc(C, C, R * 0.78, Math.PI * 0.15, Math.PI * 0.45); g.stroke();
@@ -1064,7 +1067,7 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
 
     // glass panel behind the bubbles
     const pg = ctx.createLinearGradient(0, oy, 0, oy + cell * rows);
-    pg.addColorStop(0, 'rgba(4,18,28,.32)'); pg.addColorStop(1, 'rgba(4,18,28,.5)');
+    pg.addColorStop(0, 'rgba(4,18,28,.14)'); pg.addColorStop(1, 'rgba(4,18,28,.26)');
     ctx.fillStyle = pg;
     roundRect(ctx, ox - 6, oy - 6, cell * cols + 12, cell * rows + 12, cell * 0.5);
     ctx.fill();
