@@ -607,10 +607,12 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
   }
   // Some hosts (like the artifact viewer) only serve the page's own files to fetch(), so load the
   // image that way and hand CSS a blob URL; fall back to the plain path where fetch can't reach it.
+  // The artifact build (tools/build.js) inlines every image as a data URI in window.WORLD_IMAGES.
   const worldSrc = {};
   function worldImage(w) {
-    const file = WORLDS[w].file;
+    const file = WORLDS[w].file, inlined = window.WORLD_IMAGES && window.WORLD_IMAGES[w];
     const decoded = src => new Promise((ok, fail) => { const i = new Image(); i.onload = () => ok(src); i.onerror = fail; i.src = src; });
+    if (inlined) return worldSrc[w] = worldSrc[w] || decoded(inlined);
     return worldSrc[w] = worldSrc[w] || fetch(file)
       .then(r => r.ok ? r.blob() : Promise.reject(new Error(r.status)))
       .then(b => decoded(URL.createObjectURL(b)))
@@ -1084,5 +1086,6 @@ button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
   window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? {});
 })();
 </script>
+
 </body>
 </html>

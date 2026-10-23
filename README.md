@@ -33,3 +33,7 @@ Every 10 levels is a new world with its own backdrop, made with Canva and stored
 | 71–80 | Coral Sunset |
 | 81–90 | Mermaid's Castle |
 | 91–100 | Castle by Moonlight |
+
+## Building
+
+`game.html` is the source. Run `node tools/build.js <dir>` after changing it: it rewrites `index.html` (the GitHub Pages page, which loads `backgrounds/*.jpg`) and writes `<dir>/bubble-lagoon-artifact.html`, a copy with every background inlined so it works inside the claude.ai artifact viewer.
